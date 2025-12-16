@@ -4,7 +4,6 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 // ANIMATION HOOKS & UTILITIES
 // ============================================
 
-// Custom hook for scroll-triggered animations
 const useScrollReveal = (options = {}) => {
   const ref = useRef(null);
   const [isVisible, setIsVisible] = useState(false);
@@ -14,187 +13,146 @@ const useScrollReveal = (options = {}) => {
       ([entry]) => {
         if (entry.isIntersecting) {
           setIsVisible(true);
-          if (options.once !== false) {
-            observer.unobserve(entry.target);
-          }
-        } else if (options.once === false) {
-          setIsVisible(false);
+          if (options.once !== false) observer.unobserve(entry.target);
         }
       },
-      {
-        threshold: options.threshold || 0.1,
-        rootMargin: options.rootMargin || '0px 0px -50px 0px'
-      }
+      { threshold: options.threshold || 0.1, rootMargin: options.rootMargin || '0px 0px -50px 0px' }
     );
-
-    if (ref.current) {
-      observer.observe(ref.current);
-    }
-
+    if (ref.current) observer.observe(ref.current);
     return () => observer.disconnect();
-  }, [options.threshold, options.rootMargin, options.once]);
+  }, []);
 
   return [ref, isVisible];
 };
 
-// Custom hook for parallax effect
-const useParallax = (speed = 0.5) => {
-  const [offset, setOffset] = useState(0);
-  const ref = useRef(null);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      if (ref.current) {
-        const rect = ref.current.getBoundingClientRect();
-        const scrolled = window.scrollY;
-        setOffset(scrolled * speed);
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [speed]);
-
-  return [ref, offset];
-};
-
-// Custom hook for mouse parallax
 const useMouseParallax = (intensity = 0.02) => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
-
   useEffect(() => {
     const handleMouseMove = (e) => {
       const x = (e.clientX - window.innerWidth / 2) * intensity;
       const y = (e.clientY - window.innerHeight / 2) * intensity;
       setPosition({ x, y });
     };
-
     window.addEventListener('mousemove', handleMouseMove);
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, [intensity]);
-
   return position;
 };
 
 // ============================================
-// ANIMATED BACKGROUND COMPONENTS
+// DECORATIVE ELEMENTS
 // ============================================
 
-// Floating particles for hero section
-const FloatingParticles = () => {
-  const particles = Array.from({ length: 20 }, (_, i) => ({
+const FloatingPetals = () => {
+  const petals = Array.from({ length: 15 }, (_, i) => ({
     id: i,
-    size: Math.random() * 4 + 2,
+    size: Math.random() * 20 + 10,
     x: Math.random() * 100,
-    y: Math.random() * 100,
-    duration: Math.random() * 20 + 15,
-    delay: Math.random() * 10,
-    opacity: Math.random() * 0.3 + 0.1
+    delay: Math.random() * 15,
+    duration: Math.random() * 20 + 20,
+    rotation: Math.random() * 360
   }));
 
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {particles.map((particle) => (
+      {petals.map((petal) => (
         <div
-          key={particle.id}
-          className="absolute rounded-full bg-gold animate-float"
+          key={petal.id}
+          className="absolute animate-petal-fall opacity-40"
           style={{
-            width: particle.size,
-            height: particle.size,
-            left: `${particle.x}%`,
-            top: `${particle.y}%`,
-            opacity: particle.opacity,
-            animationDuration: `${particle.duration}s`,
-            animationDelay: `${particle.delay}s`,
+            left: `${petal.x}%`,
+            top: '-5%',
+            animationDelay: `${petal.delay}s`,
+            animationDuration: `${petal.duration}s`,
           }}
-        />
+        >
+          <svg width={petal.size} height={petal.size} viewBox="0 0 24 24" style={{ transform: `rotate(${petal.rotation}deg)` }}>
+            <ellipse cx="12" cy="12" rx="4" ry="10" fill="rgba(212,175,55,0.3)" />
+          </svg>
+        </div>
       ))}
     </div>
   );
 };
 
-// Animated gradient orbs
-const GradientOrbs = () => {
-  const mousePos = useMouseParallax(0.03);
-
+const SoftGradientOrbs = () => {
+  const mousePos = useMouseParallax(0.015);
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
       <div
-        className="absolute w-[600px] h-[600px] rounded-full blur-[120px] opacity-20 animate-orb-float"
+        className="absolute w-[800px] h-[800px] rounded-full blur-[150px] animate-float-slow"
         style={{
-          background: 'radial-gradient(circle, rgba(212,175,55,0.4) 0%, transparent 70%)',
-          top: '-10%',
-          left: '-10%',
+          background: 'radial-gradient(circle, rgba(212,175,55,0.15) 0%, transparent 60%)',
+          top: '-20%',
+          right: '-20%',
           transform: `translate(${mousePos.x}px, ${mousePos.y}px)`
         }}
       />
       <div
-        className="absolute w-[500px] h-[500px] rounded-full blur-[100px] opacity-15 animate-orb-float-reverse"
+        className="absolute w-[600px] h-[600px] rounded-full blur-[120px] animate-float-slow-reverse"
         style={{
-          background: 'radial-gradient(circle, rgba(139,21,56,0.3) 0%, transparent 70%)',
-          bottom: '-5%',
-          right: '-5%',
+          background: 'radial-gradient(circle, rgba(139,21,56,0.08) 0%, transparent 60%)',
+          bottom: '-10%',
+          left: '-10%',
           transform: `translate(${-mousePos.x}px, ${-mousePos.y}px)`
         }}
       />
       <div
-        className="absolute w-[400px] h-[400px] rounded-full blur-[80px] opacity-10 animate-orb-pulse"
+        className="absolute w-[500px] h-[500px] rounded-full blur-[100px] animate-pulse-soft"
         style={{
-          background: 'radial-gradient(circle, rgba(26,93,26,0.3) 0%, transparent 70%)',
-          top: '50%',
-          left: '50%',
-          transform: `translate(-50%, -50%) translate(${mousePos.x * 0.5}px, ${mousePos.y * 0.5}px)`
+          background: 'radial-gradient(circle, rgba(26,93,26,0.08) 0%, transparent 60%)',
+          top: '40%',
+          left: '30%',
         }}
       />
     </div>
   );
 };
 
-// ============================================
-// ANIMATED KENTE PATTERN
-// ============================================
-
-const AnimatedKentePattern = ({ className, animated = true }) => (
-  <svg className={className} viewBox="0 0 200 20" preserveAspectRatio="none">
-    <defs>
-      <pattern id="kente-animated" x="0" y="0" width="40" height="20" patternUnits="userSpaceOnUse">
-        <rect width="40" height="20" fill="#1a1a1a"/>
-        <rect x="0" y="0" width="8" height="20" fill="#D4AF37" className={animated ? 'animate-kente-shimmer' : ''} />
-        <rect x="8" y="0" width="4" height="20" fill="#1A5D1A" />
-        <rect x="20" y="0" width="8" height="20" fill="#D4AF37" className={animated ? 'animate-kente-shimmer-delay' : ''} />
-        <rect x="28" y="0" width="4" height="20" fill="#8B1538" />
-        <rect x="0" y="6" width="40" height="3" fill="#8B1538" opacity="0.8" />
-        <rect x="0" y="11" width="40" height="3" fill="#1A5D1A" opacity="0.8" />
-        <rect x="0" y="16" width="40" height="4" fill="#D4AF37" className={animated ? 'animate-kente-shimmer' : ''} />
-      </pattern>
-      <linearGradient id="kente-shine" x1="0%" y1="0%" x2="100%" y2="0%">
-        <stop offset="0%" stopColor="rgba(255,255,255,0)" />
-        <stop offset="50%" stopColor="rgba(255,255,255,0.1)" />
-        <stop offset="100%" stopColor="rgba(255,255,255,0)" />
-        {animated && <animate attributeName="x1" from="-100%" to="100%" dur="3s" repeatCount="indefinite" />}
-        {animated && <animate attributeName="x2" from="0%" to="200%" dur="3s" repeatCount="indefinite" />}
-      </linearGradient>
-    </defs>
-    <rect width="200" height="20" fill="url(#kente-animated)" />
-    <rect width="200" height="20" fill="url(#kente-shine)" />
-  </svg>
+// Elegant Kente-inspired border
+const KenteBorder = ({ className = '' }) => (
+  <div className={`flex items-center justify-center gap-1 ${className}`}>
+    {Array.from({ length: 30 }).map((_, i) => (
+      <div key={i} className="flex gap-0.5">
+        <div className="w-3 h-2 bg-gradient-to-b from-gold to-gold-dark rounded-sm" />
+        <div className="w-1.5 h-2 bg-forest rounded-sm" />
+        <div className="w-1.5 h-2 bg-burgundy rounded-sm" />
+      </div>
+    ))}
+  </div>
 );
 
+// Decorative corner ornament
+const CornerOrnament = ({ position = 'top-left' }) => {
+  const positions = {
+    'top-left': 'top-0 left-0',
+    'top-right': 'top-0 right-0 rotate-90',
+    'bottom-left': 'bottom-0 left-0 -rotate-90',
+    'bottom-right': 'bottom-0 right-0 rotate-180'
+  };
+
+  return (
+    <svg className={`absolute w-24 h-24 text-gold/20 ${positions[position]}`} viewBox="0 0 100 100">
+      <path d="M0,0 Q50,0 50,50 Q50,0 100,0" fill="none" stroke="currentColor" strokeWidth="1" />
+      <path d="M0,20 Q30,20 30,50" fill="none" stroke="currentColor" strokeWidth="0.5" />
+      <circle cx="25" cy="25" r="3" fill="currentColor" />
+    </svg>
+  );
+};
+
 // ============================================
-// REUSABLE ANIMATED COMPONENTS
+// REUSABLE COMPONENTS
 // ============================================
 
-// Animated section wrapper
 const AnimatedSection = ({ children, className = '', delay = 0 }) => {
-  const [ref, isVisible] = useScrollReveal({ threshold: 0.1 });
-
+  const [ref, isVisible] = useScrollReveal();
   return (
     <div
       ref={ref}
       className={`transition-all duration-1000 ease-out ${className}`}
       style={{
         opacity: isVisible ? 1 : 0,
-        transform: isVisible ? 'translateY(0)' : 'translateY(60px)',
+        transform: isVisible ? 'translateY(0)' : 'translateY(40px)',
         transitionDelay: `${delay}ms`
       }}
     >
@@ -203,130 +161,96 @@ const AnimatedSection = ({ children, className = '', delay = 0 }) => {
   );
 };
 
-// Animated heading with line reveal
-const AnimatedHeading = ({ subtitle, title, className = '' }) => {
+const SectionHeading = ({ eyebrow, title, subtitle, light = false }) => {
   const [ref, isVisible] = useScrollReveal();
-
   return (
-    <div ref={ref} className={`text-center mb-16 ${className}`}>
-      <p
-        className="text-gold tracking-[0.3em] uppercase text-sm mb-4 transition-all duration-700"
-        style={{
-          opacity: isVisible ? 1 : 0,
-          transform: isVisible ? 'translateY(0)' : 'translateY(20px)'
-        }}
-      >
-        {subtitle}
-      </p>
+    <div ref={ref} className="text-center mb-16 md:mb-20">
+      {eyebrow && (
+        <span
+          className={`inline-block px-4 py-1.5 rounded-full text-xs tracking-[0.2em] uppercase mb-4 transition-all duration-700 ${
+            light ? 'bg-white/20 text-white' : 'bg-gold/10 text-gold-dark'
+          }`}
+          style={{ opacity: isVisible ? 1 : 0, transform: isVisible ? 'translateY(0)' : 'translateY(20px)' }}
+        >
+          {eyebrow}
+        </span>
+      )}
       <h2
-        className="font-display text-3xl md:text-5xl text-cream mb-6 transition-all duration-700 delay-150"
-        style={{
-          opacity: isVisible ? 1 : 0,
-          transform: isVisible ? 'translateY(0)' : 'translateY(30px)',
-          transitionDelay: '150ms'
-        }}
+        className={`font-display text-4xl md:text-5xl lg:text-6xl mb-4 transition-all duration-700 delay-100 ${
+          light ? 'text-white' : 'text-charcoal'
+        }`}
+        style={{ opacity: isVisible ? 1 : 0, transform: isVisible ? 'translateY(0)' : 'translateY(20px)', transitionDelay: '100ms' }}
       >
         {title}
       </h2>
+      {subtitle && (
+        <p
+          className={`text-lg max-w-2xl mx-auto transition-all duration-700 delay-200 ${
+            light ? 'text-white/80' : 'text-warm-gray'
+          }`}
+          style={{ opacity: isVisible ? 1 : 0, transitionDelay: '200ms' }}
+        >
+          {subtitle}
+        </p>
+      )}
       <div
-        className="h-1 bg-gradient-to-r from-transparent via-gold to-transparent mx-auto transition-all duration-1000 delay-300"
-        style={{
-          width: isVisible ? '6rem' : '0',
-          transitionDelay: '300ms'
-        }}
-      />
+        className="flex items-center justify-center gap-2 mt-6 transition-all duration-1000 delay-300"
+        style={{ opacity: isVisible ? 1 : 0, transitionDelay: '300ms' }}
+      >
+        <span className={`h-px w-12 ${light ? 'bg-white/40' : 'bg-gold/40'}`} />
+        <span className={`w-2 h-2 rounded-full ${light ? 'bg-white/60' : 'bg-gold'}`} />
+        <span className={`h-px w-12 ${light ? 'bg-white/40' : 'bg-gold/40'}`} />
+      </div>
     </div>
   );
 };
 
-// Animated card with hover effects
-const AnimatedCard = ({ children, className = '', delay = 0, hoverEffect = true }) => {
+const Card = ({ children, className = '', hover = true, delay = 0 }) => {
   const [ref, isVisible] = useScrollReveal();
-  const [isHovered, setIsHovered] = useState(false);
-
   return (
     <div
       ref={ref}
-      className={`relative overflow-hidden transition-all duration-500 ${className}`}
+      className={`bg-white rounded-2xl shadow-soft transition-all duration-500 ${
+        hover ? 'hover:shadow-elevated hover:-translate-y-1' : ''
+      } ${className}`}
       style={{
         opacity: isVisible ? 1 : 0,
-        transform: isVisible
-          ? isHovered && hoverEffect
-            ? 'translateY(-8px) scale(1.02)'
-            : 'translateY(0) scale(1)'
-          : 'translateY(40px) scale(0.95)',
+        transform: isVisible ? 'translateY(0)' : 'translateY(30px)',
         transitionDelay: `${delay}ms`
       }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Shine effect on hover */}
-      {hoverEffect && (
-        <div
-          className="absolute inset-0 transition-opacity duration-500 pointer-events-none"
-          style={{
-            background: 'linear-gradient(105deg, transparent 40%, rgba(212,175,55,0.1) 45%, transparent 50%)',
-            opacity: isHovered ? 1 : 0,
-            transform: isHovered ? 'translateX(100%)' : 'translateX(-100%)',
-            transition: 'transform 0.6s ease-out, opacity 0.3s ease-out'
-          }}
-        />
-      )}
       {children}
     </div>
   );
 };
 
-// Magnetic button component
-const MagneticButton = ({ children, className = '', onClick, disabled = false, variant = 'primary' }) => {
-  const buttonRef = useRef(null);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-
-  const handleMouseMove = (e) => {
-    if (disabled || !buttonRef.current) return;
-    const rect = buttonRef.current.getBoundingClientRect();
-    const x = (e.clientX - rect.left - rect.width / 2) * 0.15;
-    const y = (e.clientY - rect.top - rect.height / 2) * 0.15;
-    setPosition({ x, y });
-  };
-
-  const handleMouseLeave = () => {
-    setPosition({ x: 0, y: 0 });
-  };
-
-  const baseStyles = "relative overflow-hidden font-medium transition-all duration-300 ease-out";
+const Button = ({ children, variant = 'primary', className = '', onClick, disabled = false }) => {
   const variants = {
-    primary: "bg-gold text-stone-900 hover:bg-gold-light hover:shadow-lg hover:shadow-gold/25",
-    secondary: "bg-transparent border-2 border-gold text-gold hover:bg-gold hover:text-stone-900",
-    ghost: "bg-transparent text-gold hover:bg-gold/10"
+    primary: 'bg-gradient-to-r from-gold to-gold-dark text-white hover:shadow-gold-glow',
+    secondary: 'bg-white text-gold-dark border-2 border-gold hover:bg-gold hover:text-white',
+    outline: 'bg-transparent border-2 border-white text-white hover:bg-white hover:text-charcoal'
   };
 
   return (
     <button
-      ref={buttonRef}
       onClick={onClick}
       disabled={disabled}
-      className={`${baseStyles} ${variants[variant]} ${className} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-      style={{
-        transform: `translate(${position.x}px, ${position.y}px)`
-      }}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
+      className={`px-8 py-3 rounded-full font-medium transition-all duration-300 ${variants[variant]} ${
+        disabled ? 'opacity-50 cursor-not-allowed' : ''
+      } ${className}`}
     >
-      <span className="relative z-10">{children}</span>
-      <span className="absolute inset-0 bg-white opacity-0 hover:opacity-10 transition-opacity duration-300" />
+      {children}
     </button>
   );
 };
 
 // ============================================
-// NAVIGATION COMPONENT
+// NAVIGATION
 // ============================================
 
 const Navigation = ({ activeSection, setActiveSection }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [hoveredItem, setHoveredItem] = useState(null);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
@@ -336,79 +260,42 @@ const Navigation = ({ activeSection, setActiveSection }) => {
 
   const navItems = [
     { id: 'home', label: 'Home' },
-    { id: 'life', label: 'Her Life' },
-    { id: 'gallery', label: 'Gallery' },
-    { id: 'funeral', label: 'Funeral' },
-    { id: 'guestbook', label: 'Guestbook' },
-    { id: 'tribute', label: 'Tributes' },
+    { id: 'life', label: 'Her Story' },
+    { id: 'gallery', label: 'Memories' },
+    { id: 'funeral', label: 'Service' },
+    { id: 'guestbook', label: 'Tributes' },
     { id: 'contact', label: 'Contact' },
   ];
 
   return (
-    <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-700 ${
-        isScrolled
-          ? 'bg-stone-950/90 backdrop-blur-xl shadow-2xl shadow-black/20'
-          : 'bg-gradient-to-b from-stone-950/80 to-transparent'
-      }`}
-    >
-      {/* Animated border */}
-      <div
-        className="absolute bottom-0 left-0 right-0 h-px transition-opacity duration-500"
-        style={{
-          background: 'linear-gradient(90deg, transparent, rgba(212,175,55,0.5), transparent)',
-          opacity: isScrolled ? 1 : 0
-        }}
-      />
-
+    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+      isScrolled ? 'bg-white/95 backdrop-blur-lg shadow-soft' : 'bg-transparent'
+    }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 md:h-20">
-          <div className="flex-shrink-0 group cursor-pointer" onClick={() => setActiveSection('home')}>
-            <span className="font-display text-gold text-lg md:text-xl tracking-wide transition-all duration-300 group-hover:text-gold-light">
+        <div className="flex items-center justify-between h-20">
+          <button onClick={() => setActiveSection('home')} className="group">
+            <span className={`font-display text-xl transition-colors duration-300 ${
+              isScrolled ? 'text-charcoal' : 'text-white'
+            } group-hover:text-gold`}>
               In Loving Memory
             </span>
-            <div className="h-0.5 w-0 group-hover:w-full bg-gold transition-all duration-300" />
-          </div>
+          </button>
 
           {/* Desktop Menu */}
-          <div className="hidden md:flex items-center space-x-1">
-            {navItems.map((item, index) => (
+          <div className="hidden md:flex items-center gap-1">
+            {navItems.map((item) => (
               <button
                 key={item.id}
                 onClick={() => setActiveSection(item.id)}
-                onMouseEnter={() => setHoveredItem(item.id)}
-                onMouseLeave={() => setHoveredItem(null)}
-                className="relative px-4 py-2 text-sm tracking-wide transition-all duration-300"
-                style={{
-                  animationDelay: `${index * 50}ms`
-                }}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+                  activeSection === item.id
+                    ? 'bg-gold text-white'
+                    : isScrolled
+                      ? 'text-charcoal hover:text-gold hover:bg-gold/10'
+                      : 'text-white/90 hover:text-white hover:bg-white/10'
+                }`}
               >
-                {/* Background highlight */}
-                <span
-                  className="absolute inset-0 rounded-lg transition-all duration-300"
-                  style={{
-                    background: activeSection === item.id
-                      ? 'rgba(212,175,55,0.15)'
-                      : hoveredItem === item.id
-                        ? 'rgba(212,175,55,0.08)'
-                        : 'transparent'
-                  }}
-                />
-                {/* Text */}
-                <span
-                  className={`relative z-10 transition-colors duration-300 ${
-                    activeSection === item.id ? 'text-gold' : 'text-stone-300 hover:text-gold'
-                  }`}
-                >
-                  {item.label}
-                </span>
-                {/* Active indicator */}
-                <span
-                  className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 bg-gold rounded-full transition-all duration-300"
-                  style={{
-                    width: activeSection === item.id ? '20px' : '0'
-                  }}
-                />
+                {item.label}
               </button>
             ))}
           </div>
@@ -416,51 +303,34 @@ const Navigation = ({ activeSection, setActiveSection }) => {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden relative w-10 h-10 flex items-center justify-center text-gold"
+            className={`md:hidden p-2 rounded-lg transition-colors ${
+              isScrolled ? 'text-charcoal' : 'text-white'
+            }`}
           >
-            <span className="sr-only">Menu</span>
-            <span
-              className={`absolute w-6 h-0.5 bg-current transition-all duration-300 ${
-                mobileMenuOpen ? 'rotate-45' : '-translate-y-2'
-              }`}
-            />
-            <span
-              className={`absolute w-6 h-0.5 bg-current transition-all duration-300 ${
-                mobileMenuOpen ? 'opacity-0' : 'opacity-100'
-              }`}
-            />
-            <span
-              className={`absolute w-6 h-0.5 bg-current transition-all duration-300 ${
-                mobileMenuOpen ? '-rotate-45' : 'translate-y-2'
-              }`}
-            />
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              {mobileMenuOpen ? (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              )}
+            </svg>
           </button>
         </div>
 
         {/* Mobile Menu */}
-        <div
-          className={`md:hidden overflow-hidden transition-all duration-500 ease-out ${
-            mobileMenuOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
-          }`}
-        >
-          <div className="py-4 space-y-1 border-t border-gold/20">
-            {navItems.map((item, index) => (
+        <div className={`md:hidden transition-all duration-300 overflow-hidden ${
+          mobileMenuOpen ? 'max-h-96 pb-4' : 'max-h-0'
+        }`}>
+          <div className="bg-white rounded-2xl shadow-elevated p-2 space-y-1">
+            {navItems.map((item) => (
               <button
                 key={item.id}
-                onClick={() => {
-                  setActiveSection(item.id);
-                  setMobileMenuOpen(false);
-                }}
-                className={`block w-full text-left px-4 py-3 text-sm tracking-wide transition-all duration-300 rounded-lg ${
+                onClick={() => { setActiveSection(item.id); setMobileMenuOpen(false); }}
+                className={`block w-full px-4 py-3 rounded-xl text-left font-medium transition-colors ${
                   activeSection === item.id
-                    ? 'text-gold bg-gold/10'
-                    : 'text-stone-300 hover:text-gold hover:bg-gold/5'
+                    ? 'bg-gold text-white'
+                    : 'text-charcoal hover:bg-cream'
                 }`}
-                style={{
-                  transitionDelay: mobileMenuOpen ? `${index * 50}ms` : '0ms',
-                  transform: mobileMenuOpen ? 'translateX(0)' : 'translateX(-20px)',
-                  opacity: mobileMenuOpen ? 1 : 0
-                }}
               >
                 {item.label}
               </button>
@@ -477,12 +347,8 @@ const Navigation = ({ activeSection, setActiveSection }) => {
 // ============================================
 
 const HeroSection = () => {
-  const [parallaxRef, parallaxOffset] = useParallax(0.3);
   const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    setLoaded(true);
-  }, []);
+  useEffect(() => setLoaded(true), []);
 
   const calculateAge = () => {
     const birth = new Date(1948, 6, 15);
@@ -491,133 +357,105 @@ const HeroSection = () => {
   };
 
   return (
-    <section id="home" ref={parallaxRef} className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Background layers */}
-      <div className="absolute inset-0 bg-gradient-to-b from-stone-950 via-stone-900 to-stone-950" />
+    <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      {/* Beautiful gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-charcoal via-charcoal-light to-burgundy-dark" />
 
-      {/* Animated gradient orbs */}
-      <GradientOrbs />
+      {/* Soft overlay pattern */}
+      <div className="absolute inset-0 opacity-10" style={{
+        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23D4AF37' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
+      }} />
 
-      {/* Floating particles */}
-      <FloatingParticles />
+      {/* Floating petals */}
+      <FloatingPetals />
 
-      {/* Kente border accents with animation */}
-      <div className="absolute top-0 left-0 right-0 h-3 opacity-90">
-        <AnimatedKentePattern className="w-full h-full" />
-      </div>
-      <div className="absolute bottom-0 left-0 right-0 h-3 opacity-90">
-        <AnimatedKentePattern className="w-full h-full" />
-      </div>
+      {/* Gradient orbs */}
+      <SoftGradientOrbs />
 
-      {/* Parallax decorative lines */}
-      <div
-        className="absolute inset-0 pointer-events-none opacity-10"
-        style={{ transform: `translateY(${parallaxOffset * 0.5}px)` }}
-      >
-        <div className="absolute top-1/4 left-0 w-full h-px bg-gradient-to-r from-transparent via-gold to-transparent" />
-        <div className="absolute top-1/2 left-0 w-full h-px bg-gradient-to-r from-transparent via-gold/50 to-transparent" />
-        <div className="absolute top-3/4 left-0 w-full h-px bg-gradient-to-r from-transparent via-gold to-transparent" />
-      </div>
-
+      {/* Content */}
       <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
-        {/* Photo with animated ring */}
-        <div
-          className={`mb-10 inline-block transition-all duration-1000 ${
-            loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-          }`}
-        >
-          <div className="relative">
-            {/* Animated rings */}
-            <div className="absolute inset-0 w-52 h-52 md:w-72 md:h-72 mx-auto rounded-full border border-gold/30 animate-ring-pulse" />
-            <div className="absolute inset-0 w-52 h-52 md:w-72 md:h-72 mx-auto rounded-full border border-gold/20 animate-ring-pulse-delay" />
+        {/* Decorative top element */}
+        <div className={`mb-8 transition-all duration-1000 ${loaded ? 'opacity-100' : 'opacity-0'}`}>
+          <div className="inline-flex items-center gap-3 text-gold">
+            <span className="h-px w-8 bg-current" />
+            <span className="text-2xl">✦</span>
+            <span className="h-px w-8 bg-current" />
+          </div>
+        </div>
+
+        {/* Photo */}
+        <div className={`mb-10 transition-all duration-1000 delay-100 ${loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+          <div className="relative inline-block">
+            {/* Decorative ring */}
+            <div className="absolute -inset-4 rounded-full border-2 border-gold/30 animate-spin-slow" />
+            <div className="absolute -inset-8 rounded-full border border-gold/20" />
 
             {/* Photo container */}
-            <div className="relative w-48 h-48 md:w-64 md:h-64 mx-auto rounded-full border-4 border-gold/60 overflow-hidden bg-stone-800 shadow-2xl shadow-gold/20 group">
-              <div className="w-full h-full flex items-center justify-center text-stone-600 group-hover:text-stone-500 transition-colors duration-500">
-                <svg className="w-20 h-20 transition-transform duration-500 group-hover:scale-110" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                </svg>
+            <div className="relative w-40 h-40 md:w-52 md:h-52 rounded-full overflow-hidden border-4 border-gold shadow-2xl bg-gradient-to-br from-charcoal-light to-charcoal">
+              <div className="w-full h-full flex items-center justify-center">
+                <div className="text-center text-white/40">
+                  <svg className="w-16 h-16 mx-auto mb-2" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                  </svg>
+                  <span className="text-xs">Photo</span>
+                </div>
               </div>
-              {/* Hover shine */}
-              <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             </div>
           </div>
-          <p className="text-stone-500 text-sm mt-4 italic animate-pulse-subtle">Photo coming soon</p>
         </div>
 
         {/* Dates */}
-        <p
-          className={`text-gold/80 tracking-[0.3em] uppercase text-sm md:text-base mb-6 font-light transition-all duration-1000 delay-200 ${
-            loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-          }`}
-        >
-          <span className="inline-block animate-text-shimmer">Sunrise</span> · July 15, 1948 — <span className="inline-block animate-text-shimmer">Sunset</span> · December 14, 2025
-        </p>
+        <div className={`transition-all duration-1000 delay-200 ${loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+          <p className="text-gold font-medium tracking-[0.3em] uppercase text-sm mb-2">
+            July 15, 1948 — December 14, 2025
+          </p>
+          <p className="text-white/60 text-sm mb-8">{calculateAge()} Years of Grace & Love</p>
+        </div>
 
-        {/* Name with stagger animation */}
-        <h1
-          className={`font-display text-4xl md:text-6xl lg:text-7xl text-cream mb-4 leading-tight transition-all duration-1000 delay-300 ${
-            loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-          }`}
-        >
-          <span className="inline-block hover:text-gold transition-colors duration-300">Josephine</span>{' '}
-          <span className="inline-block hover:text-gold transition-colors duration-300">Worla</span>{' '}
-          <span className="inline-block hover:text-gold transition-colors duration-300">Ameovi</span>
+        {/* Name */}
+        <h1 className={`font-display text-5xl md:text-7xl lg:text-8xl text-white mb-6 transition-all duration-1000 delay-300 ${
+          loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+        }`}>
+          Josephine <span className="text-gold">Worla</span> Ameovi
         </h1>
 
-        <p
-          className={`text-2xl md:text-3xl text-gold font-light mb-8 italic transition-all duration-1000 delay-400 ${
-            loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-          }`}
-        >
+        {/* Nickname */}
+        <p className={`text-2xl md:text-3xl text-gold-light font-display italic mb-8 transition-all duration-1000 delay-400 ${
+          loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+        }`}>
           "Grandma"
         </p>
 
-        {/* Years of Grace */}
-        <div
-          className={`flex items-center justify-center gap-4 text-stone-400 mb-10 transition-all duration-1000 delay-500 ${
-            loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-          }`}
-        >
-          <span className="h-px w-16 bg-gradient-to-r from-transparent to-gold/60 animate-line-expand" />
-          <span className="text-lg font-light">{calculateAge()} Years of Grace</span>
-          <span className="h-px w-16 bg-gradient-to-l from-transparent to-gold/60 animate-line-expand" />
-        </div>
-
         {/* Description */}
-        <p
-          className={`text-stone-300 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed mb-10 transition-all duration-1000 delay-600 ${
-            loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-          }`}
-        >
+        <p className={`text-white/80 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed mb-12 transition-all duration-1000 delay-500 ${
+          loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+        }`}>
           A beloved mother, grandmother, and pillar of her community.
-          Daughter of the Volta Region, speaker of Ewe, Ga, and English —
-          her wisdom transcended language.
+          Daughter of the Volta Region, whose wisdom and love knew no bounds.
         </p>
 
-        {/* Peace symbol */}
-        <div
-          className={`transition-all duration-1000 delay-700 ${
-            loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
-          }`}
-        >
-          <p className="text-sm tracking-widest uppercase mb-3 text-gold/60">Rest in Perfect Peace</p>
-          <div className="text-5xl animate-gentle-float">🕊️</div>
+        {/* CTA */}
+        <div className={`transition-all duration-1000 delay-600 ${loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+          <Button variant="outline" onClick={() => document.getElementById('life').scrollIntoView({ behavior: 'smooth' })}>
+            Celebrate Her Life
+          </Button>
         </div>
 
         {/* Scroll indicator */}
-        <div
-          className={`absolute bottom-10 left-1/2 -translate-x-1/2 transition-all duration-1000 delay-1000 ${
-            loaded ? 'opacity-100' : 'opacity-0'
-          }`}
-        >
-          <div className="flex flex-col items-center text-gold/50 animate-bounce-slow">
-            <span className="text-xs tracking-widest uppercase mb-2">Scroll</span>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className={`absolute bottom-8 left-1/2 -translate-x-1/2 transition-all duration-1000 delay-700 ${
+          loaded ? 'opacity-100' : 'opacity-0'
+        }`}>
+          <div className="flex flex-col items-center text-white/50 animate-bounce-gentle">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
             </svg>
           </div>
         </div>
+      </div>
+
+      {/* Bottom Kente border */}
+      <div className="absolute bottom-0 left-0 right-0">
+        <KenteBorder className="h-3 bg-gradient-to-r from-transparent via-black/20 to-transparent py-1" />
       </div>
     </section>
   );
@@ -628,72 +466,89 @@ const HeroSection = () => {
 // ============================================
 
 const LifeSection = () => {
-  const lifeStories = [
+  const milestones = [
     {
-      title: 'Early Life',
-      content: 'Josephine Worla Ameovi was born on July 15, 1948, in the Volta Region of Ghana. From her earliest days, she embodied the rich cultural heritage of the Ewe people, growing up surrounded by the traditions, values, and warmth that would define her entire life.',
-      placeholder: '[More details about her childhood and upbringing can be added here]',
-      borderColor: 'border-gold/60',
-      icon: '🌅'
-    },
-    {
-      title: 'Family & Motherhood',
-      content: 'As a mother, Grandma Josephine was the cornerstone of her family. Her home was always open, her kitchen always full, and her wisdom always available to those who sought it. She raised her children with love, discipline, and an unwavering faith.',
-      placeholder: '[Details about her marriage, children, and family life can be added here]',
-      borderColor: 'border-forest/60',
-      icon: '👨‍👩‍👧‍👦'
-    },
-    {
-      title: 'Legacy & Community',
-      content: 'Known affectionately as "Grandma" by most who knew her, Josephine touched countless lives through her kindness, generosity, and the unique ability to make everyone feel at home. She was fluent in Ewe, Ga, and English — a testament to her connection with people from all walks of life.',
-      placeholder: '[Details about her community involvement, church, and impact can be added here]',
-      borderColor: 'border-burgundy/60',
+      year: '1948',
+      title: 'A Star is Born',
+      description: 'Josephine was born in the beautiful Volta Region of Ghana, surrounded by the rich traditions of the Ewe people.',
       icon: '🌟'
+    },
+    {
+      year: 'Early Years',
+      title: 'Growing in Grace',
+      description: 'She grew up embracing her culture, learning the values of community, faith, and family that would guide her entire life.',
+      icon: '🌱'
+    },
+    {
+      year: 'Marriage',
+      title: 'Building a Family',
+      description: 'She became the cornerstone of her family, creating a home filled with love, warmth, and the aroma of delicious cooking.',
+      icon: '💑'
+    },
+    {
+      year: 'Legacy',
+      title: 'A Life of Service',
+      description: 'Known as "Grandma" to all who knew her, she touched countless lives through her kindness, wisdom, and generous spirit.',
+      icon: '👑'
     }
   ];
 
   return (
-    <section id="life" className="py-24 md:py-36 bg-stone-950 relative overflow-hidden">
-      {/* Decorative side line */}
-      <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-gold/0 via-gold/40 to-gold/0" />
+    <section id="life" className="py-24 md:py-32 bg-cream relative overflow-hidden">
+      {/* Decorative elements */}
+      <CornerOrnament position="top-left" />
+      <CornerOrnament position="top-right" />
 
-      {/* Background pattern */}
-      <div className="absolute inset-0 opacity-5">
-        <div className="absolute top-20 right-20 w-96 h-96 border border-gold/20 rounded-full" />
-        <div className="absolute bottom-20 left-20 w-64 h-64 border border-gold/20 rounded-full" />
-      </div>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+        <SectionHeading
+          eyebrow="Her Journey"
+          title="A Life Beautifully Lived"
+          subtitle="From the hills of Volta to the hearts of many, her story is one of love, strength, and enduring grace."
+        />
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-        <AnimatedHeading subtitle="Her Journey" title="A Life Well Lived" />
+        {/* Timeline */}
+        <div className="relative">
+          {/* Center line */}
+          <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-gold/0 via-gold/50 to-gold/0 hidden md:block" />
 
-        <div className="space-y-8">
-          {lifeStories.map((story, index) => (
-            <AnimatedCard
-              key={index}
-              delay={index * 150}
-              className={`bg-stone-900/50 p-8 rounded-xl border-l-4 ${story.borderColor} backdrop-blur-sm`}
-            >
-              <div className="flex items-start gap-4">
-                <span className="text-3xl">{story.icon}</span>
-                <div className="flex-1">
-                  <h3 className="font-display text-xl text-gold mb-4">{story.title}</h3>
-                  <p className="text-lg text-stone-300 leading-relaxed">{story.content}</p>
-                  <p className="text-stone-500 italic mt-4 text-sm">{story.placeholder}</p>
+          <div className="space-y-12 md:space-y-0">
+            {milestones.map((milestone, index) => (
+              <AnimatedSection key={index} delay={index * 150}>
+                <div className={`md:flex items-center gap-8 ${index % 2 === 0 ? '' : 'md:flex-row-reverse'}`}>
+                  <div className={`md:w-1/2 ${index % 2 === 0 ? 'md:text-right md:pr-12' : 'md:pl-12'}`}>
+                    <Card className="p-6 md:p-8 inline-block">
+                      <span className="text-4xl mb-4 block">{milestone.icon}</span>
+                      <span className="inline-block px-3 py-1 bg-gold/10 text-gold-dark rounded-full text-sm font-medium mb-3">
+                        {milestone.year}
+                      </span>
+                      <h3 className="font-display text-2xl text-charcoal mb-3">{milestone.title}</h3>
+                      <p className="text-warm-gray leading-relaxed">{milestone.description}</p>
+                    </Card>
+                  </div>
+
+                  {/* Timeline dot */}
+                  <div className="hidden md:flex items-center justify-center">
+                    <div className="w-4 h-4 rounded-full bg-gold border-4 border-cream shadow-lg" />
+                  </div>
+
+                  <div className="md:w-1/2" />
                 </div>
-              </div>
-            </AnimatedCard>
-          ))}
+              </AnimatedSection>
+            ))}
+          </div>
         </div>
 
-        {/* Quote section */}
+        {/* Quote */}
         <AnimatedSection delay={600}>
-          <div className="mt-16 p-8 bg-gradient-to-r from-gold/5 via-gold/10 to-gold/5 rounded-xl border border-gold/10 relative overflow-hidden">
-            <div className="absolute top-0 left-0 text-6xl text-gold/10 font-serif">"</div>
-            <p className="text-gold italic text-xl font-display text-center relative z-10">
-              She lived not for herself, but for all those she loved.
-            </p>
-            <p className="text-stone-500 text-sm mt-4 text-center">[Family quote or her favorite saying can go here]</p>
-            <div className="absolute bottom-0 right-0 text-6xl text-gold/10 font-serif rotate-180">"</div>
+          <div className="mt-20 text-center">
+            <div className="inline-block relative">
+              <span className="absolute -top-6 -left-4 text-6xl text-gold/20 font-serif">"</span>
+              <p className="text-2xl md:text-3xl font-display text-charcoal italic px-8">
+                She lived not for herself, but for all those she loved.
+              </p>
+              <span className="absolute -bottom-8 -right-4 text-6xl text-gold/20 font-serif rotate-180">"</span>
+            </div>
+            <p className="text-warm-gray mt-8">— The Family</p>
           </div>
         </AnimatedSection>
       </div>
@@ -707,101 +562,78 @@ const LifeSection = () => {
 
 const GallerySection = () => {
   const [selectedPhoto, setSelectedPhoto] = useState(null);
-  const [hoveredIndex, setHoveredIndex] = useState(null);
 
-  const photos = Array(8).fill(null).map((_, i) => ({
-    id: i + 1,
-    placeholder: true,
-    caption: 'Memory ' + (i + 1)
-  }));
+  const photos = [
+    { id: 1, span: 'col-span-2 row-span-2', label: 'Featured Memory' },
+    { id: 2, span: '', label: 'Memory' },
+    { id: 3, span: '', label: 'Memory' },
+    { id: 4, span: '', label: 'Memory' },
+    { id: 5, span: '', label: 'Memory' },
+    { id: 6, span: 'col-span-2', label: 'Memory' },
+  ];
 
   return (
-    <section id="gallery" className="py-24 md:py-36 bg-stone-900 relative overflow-hidden">
-      {/* Background decorations */}
-      <div className="absolute top-0 right-0 w-64 h-64 bg-gold/5 rounded-full blur-3xl" />
-      <div className="absolute bottom-0 left-0 w-96 h-96 bg-burgundy/5 rounded-full blur-3xl" />
+    <section id="gallery" className="py-24 md:py-32 bg-white relative">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <SectionHeading
+          eyebrow="Photo Gallery"
+          title="Cherished Memories"
+          subtitle="A collection of moments that capture the joy, love, and warmth she brought to our lives."
+        />
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-        <AnimatedHeading subtitle="Memories" title="Photo Gallery" />
-
-        <AnimatedSection>
-          <p className="text-stone-400 text-center max-w-xl mx-auto mb-12">
-            A collection of cherished moments from Grandma's life
-          </p>
-        </AnimatedSection>
-
-        {/* Photo grid with staggered animations */}
+        {/* Masonry-style grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
           {photos.map((photo, index) => (
-            <AnimatedCard
-              key={photo.id}
-              delay={index * 100}
-              hoverEffect={false}
-              className="aspect-square"
-            >
+            <AnimatedSection key={photo.id} delay={index * 100} className={photo.span}>
               <div
-                className={`relative w-full h-full bg-stone-800 rounded-xl overflow-hidden cursor-pointer group transition-all duration-500 ${
-                  hoveredIndex === index ? 'ring-2 ring-gold shadow-xl shadow-gold/20' : 'ring-1 ring-stone-700'
-                }`}
                 onClick={() => setSelectedPhoto(photo)}
-                onMouseEnter={() => setHoveredIndex(index)}
-                onMouseLeave={() => setHoveredIndex(null)}
+                className="relative aspect-square bg-gradient-to-br from-cream to-warm-white rounded-2xl overflow-hidden cursor-pointer group shadow-soft hover:shadow-elevated transition-all duration-500"
               >
-                {/* Placeholder content */}
-                <div className="w-full h-full flex items-center justify-center text-stone-600 group-hover:text-gold/60 transition-all duration-500">
-                  <div className="text-center p-4">
-                    <svg
-                      className="w-12 h-12 mx-auto mb-2 transition-transform duration-500 group-hover:scale-110"
-                      fill="currentColor"
-                      viewBox="0 0 24 24"
-                    >
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-center text-charcoal/30 group-hover:text-gold/50 transition-colors">
+                    <svg className="w-12 h-12 mx-auto mb-2 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
                     </svg>
-                    <p className="text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-300">{photo.caption}</p>
+                    <span className="text-sm font-medium">{photo.label}</span>
                   </div>
                 </div>
 
                 {/* Hover overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-stone-950/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <div className="absolute inset-0 bg-gradient-to-t from-charcoal/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-                {/* Corner decoration */}
-                <div className="absolute top-2 right-2 w-8 h-8 border-t-2 border-r-2 border-gold/0 group-hover:border-gold/60 transition-all duration-500 rounded-tr-lg" />
-                <div className="absolute bottom-2 left-2 w-8 h-8 border-b-2 border-l-2 border-gold/0 group-hover:border-gold/60 transition-all duration-500 rounded-bl-lg" />
+                {/* Corner accents */}
+                <div className="absolute top-3 left-3 w-6 h-6 border-t-2 border-l-2 border-gold/0 group-hover:border-gold rounded-tl-lg transition-all duration-500" />
+                <div className="absolute bottom-3 right-3 w-6 h-6 border-b-2 border-r-2 border-gold/0 group-hover:border-gold rounded-br-lg transition-all duration-500" />
               </div>
-            </AnimatedCard>
+            </AnimatedSection>
           ))}
         </div>
 
-        <AnimatedSection delay={800}>
-          <p className="text-stone-500 text-sm text-center mt-12">
-            Family members can submit photos to be added to this gallery
+        <AnimatedSection delay={700}>
+          <p className="text-center text-warm-gray mt-12">
+            More photos will be added. Family members can submit cherished memories.
           </p>
         </AnimatedSection>
       </div>
 
-      {/* Lightbox Modal */}
+      {/* Lightbox */}
       {selectedPhoto && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/95 backdrop-blur-lg animate-fadeIn"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-charcoal/90 backdrop-blur-lg animate-fade-in"
           onClick={() => setSelectedPhoto(null)}
         >
-          <div
-            className="relative max-w-4xl w-full aspect-video bg-stone-800 rounded-2xl overflow-hidden shadow-2xl animate-modal-enter"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="w-full h-full flex items-center justify-center text-stone-600">
-              <div className="text-center">
-                <svg className="w-24 h-24 mx-auto mb-4" fill="currentColor" viewBox="0 0 24 24">
+          <div className="relative max-w-4xl w-full bg-white rounded-3xl overflow-hidden shadow-2xl animate-scale-in">
+            <div className="aspect-video bg-gradient-to-br from-cream to-warm-white flex items-center justify-center">
+              <div className="text-center text-charcoal/40">
+                <svg className="w-20 h-20 mx-auto mb-4" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
                 </svg>
                 <p className="text-lg">Photo coming soon</p>
               </div>
             </div>
-
-            {/* Close button */}
             <button
               onClick={() => setSelectedPhoto(null)}
-              className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-stone-900/80 text-gold hover:bg-gold hover:text-stone-900 transition-all duration-300"
+              className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-charcoal text-white hover:bg-gold transition-colors"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -815,183 +647,99 @@ const GallerySection = () => {
 };
 
 // ============================================
-// FUNERAL SECTION WITH ANIMATED TIMELINE
+// FUNERAL SERVICE SECTION
 // ============================================
 
 const FuneralSection = () => {
   const events = [
     {
-      title: "Filing Past / Laying in State",
-      date: "Date to be announced",
-      time: "Time TBA",
-      venue: "Venue to be announced",
-      address: "Address TBA",
-      dress: "Traditional attire (Kente or black/red)",
-      icon: "🕯️",
-      color: 'gold'
+      title: 'Laying in State',
+      time: 'To be announced',
+      location: 'Venue TBA',
+      dress: 'Traditional Kente or Black/Red',
+      icon: '🕯️',
+      color: 'from-gold/20 to-gold/5'
     },
     {
-      title: "Funeral Service",
-      date: "Date to be announced",
-      time: "Time TBA",
-      venue: "Venue to be announced",
-      address: "Address TBA",
-      dress: "Traditional attire (Kente or black/red)",
-      icon: "⛪",
-      color: 'burgundy'
+      title: 'Funeral Service',
+      time: 'To be announced',
+      location: 'Venue TBA',
+      dress: 'Traditional attire',
+      icon: '⛪',
+      color: 'from-burgundy/20 to-burgundy/5'
     },
     {
-      title: "Burial",
-      date: "Date to be announced",
-      time: "Immediately after service",
-      venue: "Cemetery to be announced",
-      address: "Address TBA",
-      dress: "Traditional attire",
-      icon: "🌹",
-      color: 'forest'
+      title: 'Burial Ceremony',
+      time: 'After service',
+      location: 'Cemetery TBA',
+      dress: 'Traditional attire',
+      icon: '🌹',
+      color: 'from-forest/20 to-forest/5'
     },
     {
-      title: "Reception / Thanksgiving",
-      date: "Date to be announced",
-      time: "After burial",
-      venue: "Venue to be announced",
-      address: "Address TBA",
-      dress: "Smart casual / Traditional",
-      icon: "🎉",
-      color: 'gold'
+      title: 'Reception',
+      time: 'After burial',
+      location: 'Venue TBA',
+      dress: 'Smart casual',
+      icon: '🎉',
+      color: 'from-gold/20 to-gold/5'
     }
   ];
 
   return (
-    <section id="funeral" className="py-24 md:py-36 bg-stone-950 relative overflow-hidden">
-      {/* Kente accent */}
-      <div className="absolute right-0 top-20 w-6 h-96 opacity-40">
-        <AnimatedKentePattern className="w-full h-full" />
-      </div>
-      <div className="absolute left-0 bottom-20 w-6 h-96 opacity-40">
-        <AnimatedKentePattern className="w-full h-full" />
+    <section id="funeral" className="py-24 md:py-32 bg-gradient-to-br from-charcoal via-charcoal to-charcoal-light text-white relative overflow-hidden">
+      {/* Background decoration */}
+      <div className="absolute inset-0 opacity-5">
+        <div className="absolute top-20 left-20 w-64 h-64 border border-white rounded-full" />
+        <div className="absolute bottom-20 right-20 w-96 h-96 border border-white rounded-full" />
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-        <AnimatedHeading subtitle="Celebration of Life" title="Funeral Programme" />
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+        <SectionHeading
+          eyebrow="Celebration of Life"
+          title="Funeral Service"
+          subtitle="Join us as we honor and celebrate the beautiful life of Grandma Josephine."
+          light
+        />
 
-        {/* Timeline */}
-        <div className="relative">
-          {/* Vertical line */}
-          <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-gold/0 via-gold/40 to-gold/0 hidden md:block" />
-
-          <div className="space-y-8 md:space-y-0">
-            {events.map((event, index) => (
-              <AnimatedCard
-                key={index}
-                delay={index * 150}
-                className={`md:w-[calc(50%-2rem)] ${index % 2 === 0 ? 'md:mr-auto md:pr-8' : 'md:ml-auto md:pl-8'}`}
-              >
-                {/* Timeline dot */}
-                <div className="hidden md:block absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-gold border-4 border-stone-950 z-10"
-                  style={{ [index % 2 === 0 ? 'right' : 'left']: '-2rem' }}
-                />
-
-                <div className="bg-gradient-to-br from-stone-900 to-stone-900/50 p-6 md:p-8 rounded-xl border border-stone-800 hover:border-gold/30 transition-all duration-500 group">
-                  <div className="flex items-start gap-4">
-                    <span className="text-4xl transition-transform duration-300 group-hover:scale-110">{event.icon}</span>
-                    <div className="flex-1">
-                      <h3 className="font-display text-xl text-gold mb-4">{event.title}</h3>
-                      <div className="space-y-3 text-stone-300">
-                        <EventDetail icon="calendar" text={event.date} />
-                        <EventDetail icon="clock" text={event.time} />
-                        <EventDetail icon="location" text={event.venue} />
-                        <EventDetail icon="building" text={event.address} className="text-stone-400 text-sm" />
-                      </div>
-                      <div className="mt-4 pt-4 border-t border-stone-800">
-                        <p className="text-sm text-gold/80">
-                          <span className="text-stone-500">Dress Code:</span> {event.dress}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+        <div className="grid md:grid-cols-2 gap-6">
+          {events.map((event, index) => (
+            <AnimatedSection key={index} delay={index * 150}>
+              <div className={`relative p-6 md:p-8 rounded-2xl bg-gradient-to-br ${event.color} backdrop-blur-sm border border-white/10 hover:border-gold/30 transition-all duration-500 group`}>
+                <span className="text-4xl mb-4 block group-hover:scale-110 transition-transform duration-300">{event.icon}</span>
+                <h3 className="font-display text-2xl text-white mb-4">{event.title}</h3>
+                <div className="space-y-2 text-white/80">
+                  <p className="flex items-center gap-2">
+                    <span className="text-gold">⏰</span> {event.time}
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <span className="text-gold">📍</span> {event.location}
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <span className="text-gold">👔</span> {event.dress}
+                  </p>
                 </div>
-              </AnimatedCard>
-            ))}
-          </div>
+              </div>
+            </AnimatedSection>
+          ))}
         </div>
 
-        {/* Additional Info */}
-        <div className="mt-16 grid md:grid-cols-2 gap-6">
-          <AnimatedCard delay={600}>
-            <div className="bg-stone-900/50 p-6 rounded-xl border border-stone-800 h-full">
-              <h4 className="font-display text-lg text-gold mb-4 flex items-center gap-2">
-                <span>🏨</span> Accommodation
-              </h4>
-              <p className="text-stone-400 text-sm leading-relaxed">
-                For out-of-town guests, accommodation recommendations will be provided soon.
-                Please contact the family for assistance.
-              </p>
-            </div>
-          </AnimatedCard>
-          <AnimatedCard delay={700}>
-            <div className="bg-stone-900/50 p-6 rounded-xl border border-stone-800 h-full">
-              <h4 className="font-display text-lg text-gold mb-4 flex items-center gap-2">
-                <span>🚗</span> Transportation
-              </h4>
-              <p className="text-stone-400 text-sm leading-relaxed">
-                Transportation arrangements from Accra to the funeral venue will be coordinated.
-                Details coming soon.
-              </p>
-            </div>
-          </AnimatedCard>
-        </div>
-
-        {/* RSVP CTA */}
-        <AnimatedSection delay={800}>
+        {/* RSVP */}
+        <AnimatedSection delay={600}>
           <div className="mt-16 text-center">
-            <div className="inline-block bg-gradient-to-r from-gold/10 via-gold/20 to-gold/10 p-8 md:p-12 rounded-2xl border border-gold/20 relative overflow-hidden group">
-              {/* Animated background */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gold/5 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-
-              <h4 className="font-display text-2xl text-gold mb-4 relative">Please RSVP</h4>
-              <p className="text-stone-300 mb-8 relative">
-                Help us prepare by letting us know if you'll be attending
+            <div className="inline-block bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-8 md:p-12">
+              <h4 className="font-display text-2xl text-white mb-4">Please Confirm Your Attendance</h4>
+              <p className="text-white/70 mb-8 max-w-md mx-auto">
+                Help us prepare adequately by letting us know if you'll be joining us.
               </p>
-              <MagneticButton
-                variant="primary"
-                className="px-10 py-4 rounded-xl text-lg"
-                onClick={() => document.getElementById('contact').scrollIntoView({ behavior: 'smooth' })}
-              >
-                Confirm Attendance
-              </MagneticButton>
+              <Button variant="outline" onClick={() => document.getElementById('contact').scrollIntoView({ behavior: 'smooth' })}>
+                RSVP Now
+              </Button>
             </div>
           </div>
         </AnimatedSection>
       </div>
     </section>
-  );
-};
-
-// Event detail component
-const EventDetail = ({ icon, text, className = '' }) => {
-  const icons = {
-    calendar: (
-      <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z"/>
-    ),
-    clock: (
-      <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
-    ),
-    location: (
-      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-    ),
-    building: (
-      <path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/>
-    )
-  };
-
-  return (
-    <p className={`flex items-center gap-2 ${className}`}>
-      <svg className="w-4 h-4 text-gold/60 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-        {icons[icon]}
-      </svg>
-      <span>{text}</span>
-    </p>
   );
 };
 
@@ -1003,28 +751,21 @@ const GuestbookSection = () => {
   const [entries, setEntries] = useState([
     {
       id: 1,
-      name: "The Family",
-      location: "Accra, Ghana",
-      message: "We welcome all who knew and loved Grandma to share their memories here. Your words mean everything to us during this time.",
-      date: "December 2025"
+      name: 'The Family',
+      location: 'Accra, Ghana',
+      message: 'We welcome all who knew and loved Grandma to share their memories here. Your words mean everything to us.',
+      date: 'December 2025'
     }
   ]);
   const [formData, setFormData] = useState({ name: '', location: '', message: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [focusedField, setFocusedField] = useState(null);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-
     setTimeout(() => {
-      const newEntry = {
-        id: entries.length + 1,
-        ...formData,
-        date: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-      };
-      setEntries([newEntry, ...entries]);
+      setEntries([{ id: Date.now(), ...formData, date: 'December 2025' }, ...entries]);
       setFormData({ name: '', location: '', message: '' });
       setIsSubmitting(false);
       setSubmitted(true);
@@ -1033,233 +774,87 @@ const GuestbookSection = () => {
   };
 
   return (
-    <section id="guestbook" className="py-24 md:py-36 bg-stone-900 relative overflow-hidden">
-      {/* Background decorations */}
-      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-gold/20 to-transparent" />
+    <section id="guestbook" className="py-24 md:py-32 bg-cream relative">
+      <CornerOrnament position="bottom-left" />
+      <CornerOrnament position="bottom-right" />
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-        <AnimatedHeading subtitle="Share Your Memories" title="Guestbook" />
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <SectionHeading
+          eyebrow="Share Your Memories"
+          title="Tributes & Messages"
+          subtitle="Leave a message of love, share a memory, or offer your condolences."
+        />
 
-        {/* Submission Form */}
-        <AnimatedCard delay={100}>
-          <div className="bg-stone-950 p-6 md:p-8 rounded-2xl border border-stone-800 mb-12 relative overflow-hidden">
-            {/* Form glow effect */}
-            <div className="absolute inset-0 bg-gradient-to-br from-gold/5 via-transparent to-transparent opacity-0 hover:opacity-100 transition-opacity duration-500" />
-
-            <h3 className="font-display text-xl text-gold mb-6 flex items-center gap-2">
-              <span className="text-2xl">✍️</span> Leave a Message
+        {/* Form */}
+        <AnimatedSection>
+          <Card className="p-6 md:p-8 mb-12">
+            <h3 className="font-display text-xl text-charcoal mb-6 flex items-center gap-2">
+              <span className="text-2xl">✍️</span> Sign the Guestbook
             </h3>
-            <form onSubmit={handleSubmit} className="space-y-6 relative">
-              <div className="grid md:grid-cols-2 gap-6">
-                <AnimatedInput
-                  label="Your Name"
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="grid md:grid-cols-2 gap-5">
+                <div>
+                  <label className="block text-sm font-medium text-charcoal mb-2">Your Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border-2 border-warm-gray/20 focus:border-gold focus:ring-0 outline-none transition-colors bg-cream/50"
+                    placeholder="Enter your name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-charcoal mb-2">Location</label>
+                  <input
+                    type="text"
+                    value={formData.location}
+                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border-2 border-warm-gray/20 focus:border-gold focus:ring-0 outline-none transition-colors bg-cream/50"
+                    placeholder="City, Country"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-charcoal mb-2">Your Message *</label>
+                <textarea
                   required
-                  value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  placeholder="Enter your name"
-                  focused={focusedField === 'name'}
-                  onFocus={() => setFocusedField('name')}
-                  onBlur={() => setFocusedField(null)}
-                />
-                <AnimatedInput
-                  label="Location"
-                  value={formData.location}
-                  onChange={(e) => setFormData({...formData, location: e.target.value})}
-                  placeholder="City, Country"
-                  focused={focusedField === 'location'}
-                  onFocus={() => setFocusedField('location')}
-                  onBlur={() => setFocusedField(null)}
+                  rows={4}
+                  value={formData.message}
+                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl border-2 border-warm-gray/20 focus:border-gold focus:ring-0 outline-none transition-colors resize-none bg-cream/50"
+                  placeholder="Share a memory or leave a message..."
                 />
               </div>
-              <AnimatedInput
-                label="Your Message"
-                required
-                multiline
-                rows={4}
-                value={formData.message}
-                onChange={(e) => setFormData({...formData, message: e.target.value})}
-                placeholder="Share a memory or condolence..."
-                focused={focusedField === 'message'}
-                onFocus={() => setFocusedField('message')}
-                onBlur={() => setFocusedField(null)}
-              />
-              <MagneticButton
-                variant="primary"
-                className="px-8 py-3 rounded-xl"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <span className="flex items-center gap-2">
-                    <svg className="w-5 h-5 animate-spin" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    Sending...
-                  </span>
-                ) : submitted ? (
-                  <span className="flex items-center gap-2">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    Message Sent
-                  </span>
-                ) : (
-                  'Sign Guestbook'
-                )}
-              </MagneticButton>
+              <Button disabled={isSubmitting}>
+                {isSubmitting ? 'Sending...' : submitted ? '✓ Message Sent!' : 'Submit Tribute'}
+              </Button>
             </form>
-          </div>
-        </AnimatedCard>
+          </Card>
+        </AnimatedSection>
 
         {/* Entries */}
         <div className="space-y-6">
           {entries.map((entry, index) => (
-            <AnimatedCard key={entry.id} delay={200 + index * 100}>
-              <div className="bg-stone-950/50 p-6 md:p-8 rounded-xl border-l-4 border-gold/40 relative overflow-hidden group hover:border-gold/60 transition-colors duration-300">
-                {/* Quote marks */}
-                <span className="absolute top-4 left-4 text-4xl text-gold/10 font-serif">"</span>
-
-                <p className="text-stone-300 text-lg mb-4 italic relative z-10 pl-6">{entry.message}</p>
-                <div className="flex items-center justify-between text-sm relative z-10">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-gold/20 flex items-center justify-center text-gold font-medium">
+            <AnimatedSection key={entry.id} delay={index * 100}>
+              <Card className="p-6 border-l-4 border-gold" hover={false}>
+                <p className="text-charcoal text-lg italic mb-4">"{entry.message}"</p>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gold to-gold-dark flex items-center justify-center text-white font-medium">
                       {entry.name.charAt(0)}
                     </div>
                     <div>
-                      <span className="text-gold font-medium">{entry.name}</span>
-                      {entry.location && (
-                        <span className="text-stone-500 block text-xs">{entry.location}</span>
-                      )}
+                      <p className="font-medium text-charcoal">{entry.name}</p>
+                      {entry.location && <p className="text-sm text-warm-gray">{entry.location}</p>}
                     </div>
                   </div>
-                  <span className="text-stone-600">{entry.date}</span>
+                  <span className="text-sm text-warm-gray">{entry.date}</span>
                 </div>
-
-                {/* Hover accent */}
-                <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-gold/0 via-gold/40 to-gold/0 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              </div>
-            </AnimatedCard>
+              </Card>
+            </AnimatedSection>
           ))}
         </div>
-      </div>
-    </section>
-  );
-};
-
-// Animated input component
-const AnimatedInput = ({ label, required, multiline, rows, value, onChange, placeholder, focused, onFocus, onBlur }) => {
-  const InputComponent = multiline ? 'textarea' : 'input';
-
-  return (
-    <div className="relative">
-      <label className="block text-stone-400 text-sm mb-2 transition-colors duration-300" style={{ color: focused ? '#D4AF37' : undefined }}>
-        {label} {required && <span className="text-gold">*</span>}
-      </label>
-      <div className="relative">
-        <InputComponent
-          required={required}
-          rows={rows}
-          value={value}
-          onChange={onChange}
-          onFocus={onFocus}
-          onBlur={onBlur}
-          className={`w-full bg-stone-900 border-2 rounded-xl px-4 py-3 text-cream transition-all duration-300 outline-none resize-none ${
-            focused ? 'border-gold shadow-lg shadow-gold/10' : 'border-stone-700 hover:border-stone-600'
-          }`}
-          placeholder={placeholder}
-        />
-        {/* Focus ring animation */}
-        <div
-          className="absolute inset-0 rounded-xl pointer-events-none transition-opacity duration-300"
-          style={{
-            boxShadow: focused ? '0 0 0 4px rgba(212,175,55,0.1)' : 'none',
-            opacity: focused ? 1 : 0
-          }}
-        />
-      </div>
-    </div>
-  );
-};
-
-// ============================================
-// TRIBUTE SECTION
-// ============================================
-
-const TributeSection = () => {
-  return (
-    <section id="tribute" className="py-24 md:py-36 bg-stone-950 relative overflow-hidden">
-      {/* Background decoration */}
-      <div className="absolute inset-0">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full border border-gold/5" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full border border-gold/5" />
-      </div>
-
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-        <AnimatedHeading subtitle="Honor Her Memory" title="Tributes & Contributions" />
-
-        <div className="grid md:grid-cols-2 gap-8">
-          {/* Funeral Contributions */}
-          <AnimatedCard delay={100}>
-            <div className="bg-gradient-to-br from-stone-900 to-stone-900/50 p-8 rounded-2xl border border-stone-800 h-full group hover:border-gold/30 transition-all duration-500">
-              <div className="text-5xl mb-6 transition-transform duration-300 group-hover:scale-110">💝</div>
-              <h3 className="font-display text-xl text-gold mb-4">Funeral Contributions</h3>
-              <p className="text-stone-400 mb-6 leading-relaxed">
-                Your generous contributions help the family give Grandma Josephine the
-                dignified send-off she deserves.
-              </p>
-              <div className="bg-stone-950 p-4 rounded-xl mb-4 border border-stone-800">
-                <p className="text-stone-500 text-sm mb-2">Bank Details</p>
-                <p className="text-stone-300">Account details will be provided</p>
-                <p className="text-stone-500 text-sm mt-4">Mobile Money</p>
-                <p className="text-stone-300">Number to be provided</p>
-              </div>
-              <p className="text-stone-500 text-xs italic">
-                All contributions, no matter the size, are deeply appreciated
-              </p>
-            </div>
-          </AnimatedCard>
-
-          {/* Memorial Donation */}
-          <AnimatedCard delay={200}>
-            <div className="bg-gradient-to-br from-stone-900 to-stone-900/50 p-8 rounded-2xl border border-stone-800 h-full group hover:border-gold/30 transition-all duration-500">
-              <div className="text-5xl mb-6 transition-transform duration-300 group-hover:scale-110">🌱</div>
-              <h3 className="font-display text-xl text-gold mb-4">In Lieu of Flowers</h3>
-              <p className="text-stone-400 mb-6 leading-relaxed">
-                Those wishing to honor Grandma's memory in a special way may contribute to:
-              </p>
-              <div className="bg-stone-950 p-4 rounded-xl mb-4 border border-stone-800">
-                <p className="text-stone-300 mb-2">[Cause or charity she cared about]</p>
-                <p className="text-stone-500 text-sm">
-                  Details to be provided by the family
-                </p>
-              </div>
-              <p className="text-stone-500 text-xs italic">
-                Grandma believed in [her values/causes]
-              </p>
-            </div>
-          </AnimatedCard>
-        </div>
-
-        {/* Order of Service Download */}
-        <AnimatedSection delay={400}>
-          <div className="mt-16 text-center">
-            <div className="inline-block bg-stone-900 p-8 md:p-12 rounded-2xl border border-stone-800 relative overflow-hidden group">
-              {/* Animated border */}
-              <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                <div className="absolute inset-0 rounded-2xl border-2 border-gold/30" />
-              </div>
-
-              <div className="text-5xl mb-6 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">📜</div>
-              <h4 className="font-display text-xl text-gold mb-4">Order of Service</h4>
-              <p className="text-stone-400 mb-8">
-                Download the funeral programme
-              </p>
-              <MagneticButton variant="secondary" className="px-8 py-3 rounded-xl" disabled>
-                Coming Soon
-              </MagneticButton>
-            </div>
-          </div>
-        </AnimatedSection>
       </div>
     </section>
   );
@@ -1270,100 +865,64 @@ const TributeSection = () => {
 // ============================================
 
 const ContactSection = () => {
-  const [focusedField, setFocusedField] = useState(null);
-
   return (
-    <section id="contact" className="py-24 md:py-36 bg-stone-900 relative overflow-hidden">
-      {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-stone-900 via-stone-900 to-stone-950" />
-
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-        <AnimatedHeading subtitle="Get in Touch" title="Contact Family" />
+    <section id="contact" className="py-24 md:py-32 bg-white relative">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <SectionHeading
+          eyebrow="Get in Touch"
+          title="Contact the Family"
+          subtitle="For inquiries, RSVP, or to share your condolences."
+        />
 
         <div className="grid md:grid-cols-2 gap-8">
-          {/* Contact Form */}
-          <AnimatedCard delay={100}>
-            <div className="bg-stone-950 p-6 md:p-8 rounded-2xl border border-stone-800 h-full">
-              <h3 className="font-display text-xl text-gold mb-6 flex items-center gap-2">
-                <span>💬</span> Send a Message
-              </h3>
-              <form className="space-y-5">
-                <AnimatedInput
-                  label="Your Name"
-                  placeholder="Enter your name"
-                  focused={focusedField === 'contact-name'}
-                  onFocus={() => setFocusedField('contact-name')}
-                  onBlur={() => setFocusedField(null)}
+          <AnimatedSection>
+            <Card className="p-6 md:p-8 h-full">
+              <h3 className="font-display text-xl text-charcoal mb-6">Send a Message</h3>
+              <form className="space-y-4">
+                <input
+                  type="text"
+                  placeholder="Your Name"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-warm-gray/20 focus:border-gold focus:ring-0 outline-none transition-colors"
                 />
-                <AnimatedInput
-                  label="Phone / WhatsApp"
-                  placeholder="Your phone number"
-                  focused={focusedField === 'contact-phone'}
-                  onFocus={() => setFocusedField('contact-phone')}
-                  onBlur={() => setFocusedField(null)}
+                <input
+                  type="tel"
+                  placeholder="Phone / WhatsApp"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-warm-gray/20 focus:border-gold focus:ring-0 outline-none transition-colors"
                 />
-                <AnimatedInput
-                  label="Message"
-                  multiline
+                <textarea
                   rows={3}
-                  placeholder="How can we help?"
-                  focused={focusedField === 'contact-message'}
-                  onFocus={() => setFocusedField('contact-message')}
-                  onBlur={() => setFocusedField(null)}
+                  placeholder="Your Message"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-warm-gray/20 focus:border-gold focus:ring-0 outline-none transition-colors resize-none"
                 />
-                <MagneticButton variant="primary" className="w-full py-3 rounded-xl">
-                  Send Message
-                </MagneticButton>
+                <Button className="w-full">Send Message</Button>
               </form>
-            </div>
-          </AnimatedCard>
+            </Card>
+          </AnimatedSection>
 
-          {/* Contact Details */}
           <div className="space-y-6">
-            <AnimatedCard delay={200}>
-              <div className="bg-stone-950 p-6 rounded-xl border border-stone-800 group hover:border-gold/30 transition-all duration-300">
-                <h4 className="text-gold font-medium mb-4 flex items-center gap-2">
-                  <span>👨‍👩‍👧‍👦</span> Family Contacts
+            <AnimatedSection delay={100}>
+              <Card className="p-6">
+                <h4 className="font-medium text-charcoal mb-4 flex items-center gap-2">
+                  <span className="text-gold">📞</span> Family Contacts
                 </h4>
-                <div className="space-y-3 text-stone-300">
-                  <ContactItem icon="📞" text="[Primary Contact Number]" />
-                  <ContactItem icon="📞" text="[Secondary Contact Number]" />
-                  <ContactItem icon="✉️" text="[Family Email]" />
+                <div className="space-y-2 text-warm-gray">
+                  <p>[Primary Contact Number]</p>
+                  <p>[Secondary Contact Number]</p>
+                  <p>[Family Email]</p>
                 </div>
-              </div>
-            </AnimatedCard>
+              </Card>
+            </AnimatedSection>
 
-            <AnimatedCard delay={300}>
-              <div className="bg-stone-950 p-6 rounded-xl border border-stone-800 group hover:border-gold/30 transition-all duration-300">
-                <h4 className="text-gold font-medium mb-4 flex items-center gap-2">
-                  <span>💬</span> WhatsApp Groups
-                </h4>
-                <p className="text-stone-400 text-sm mb-4">
-                  Join our coordination groups for updates
-                </p>
-                <MagneticButton
-                  variant="primary"
-                  className="w-full py-3 rounded-xl"
-                  disabled
-                  style={{ backgroundColor: '#25D366' }}
-                >
-                  <span className="flex items-center justify-center gap-2">
-                    <span>📱</span> Join WhatsApp Group (Link coming)
-                  </span>
-                </MagneticButton>
-              </div>
-            </AnimatedCard>
-
-            <AnimatedCard delay={400}>
-              <div className="bg-gradient-to-r from-gold/10 via-gold/15 to-gold/10 p-6 rounded-xl border border-gold/20 text-center">
-                <p className="text-cream text-lg italic font-display">
+            <AnimatedSection delay={200}>
+              <Card className="p-6 bg-gradient-to-br from-gold/10 to-gold/5 border border-gold/20" hover={false}>
+                <p className="text-charcoal text-lg italic font-display text-center">
                   "Mía wò kpɔ́ fú o"
                 </p>
-                <p className="text-stone-400 text-sm mt-2">
+                <p className="text-warm-gray text-sm text-center mt-2">
                   (We will meet again) — Ewe proverb
                 </p>
-              </div>
-            </AnimatedCard>
+              </Card>
+            </AnimatedSection>
           </div>
         </div>
       </div>
@@ -1371,70 +930,32 @@ const ContactSection = () => {
   );
 };
 
-// Contact item component
-const ContactItem = ({ icon, text }) => (
-  <p className="flex items-center gap-3 transition-colors duration-300 hover:text-gold cursor-pointer">
-    <span className="text-gold">{icon}</span>
-    <span>{text}</span>
-  </p>
-);
-
 // ============================================
 // FOOTER
 // ============================================
 
 const Footer = () => {
-  const [ref, isVisible] = useScrollReveal();
-
   return (
-    <footer ref={ref} className="bg-stone-950 py-16 relative overflow-hidden">
-      {/* Kente border */}
-      <div className="absolute top-0 left-0 right-0 h-2 opacity-80">
-        <AnimatedKentePattern className="w-full h-full" />
-      </div>
+    <footer className="bg-charcoal text-white py-16 relative overflow-hidden">
+      <KenteBorder className="absolute top-0 left-0 right-0 h-2" />
 
-      {/* Background glow */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="w-96 h-96 bg-gold/5 rounded-full blur-3xl" />
-      </div>
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div className="mb-6">
+          <span className="text-gold text-3xl">✦</span>
+        </div>
+        <h2 className="font-display text-3xl md:text-4xl text-white mb-2">
+          Josephine Worla Ameovi
+        </h2>
+        <p className="text-gold text-lg mb-2">"Grandma"</p>
+        <p className="text-white/60 mb-8">July 15, 1948 — December 14, 2025</p>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative">
-        <div
-          className="mb-8 transition-all duration-1000"
-          style={{
-            opacity: isVisible ? 1 : 0,
-            transform: isVisible ? 'translateY(0)' : 'translateY(30px)'
-          }}
-        >
-          <p className="font-display text-3xl text-gold mb-3">Josephine Worla Ameovi</p>
-          <p className="text-stone-400 text-lg">"Grandma"</p>
-          <p className="text-stone-500 mt-3">July 15, 1948 — December 14, 2025</p>
+        <div className="flex items-center justify-center gap-4 mb-8">
+          <span className="h-px w-16 bg-gold/40" />
+          <span className="text-gold">Forever in our hearts</span>
+          <span className="h-px w-16 bg-gold/40" />
         </div>
 
-        <div
-          className="w-20 h-px bg-gradient-to-r from-transparent via-gold to-transparent mx-auto my-8 transition-all duration-1000 delay-200"
-          style={{
-            opacity: isVisible ? 1 : 0,
-            width: isVisible ? '5rem' : '0'
-          }}
-        />
-
-        <p
-          className="text-stone-500 mb-2 transition-all duration-1000 delay-300"
-          style={{
-            opacity: isVisible ? 1 : 0,
-            transform: isVisible ? 'translateY(0)' : 'translateY(20px)'
-          }}
-        >
-          Forever in our hearts 💛
-        </p>
-
-        <p
-          className="text-stone-600 text-xs mt-10 transition-all duration-1000 delay-400"
-          style={{
-            opacity: isVisible ? 1 : 0
-          }}
-        >
+        <p className="text-white/40 text-sm">
           Built with love by the family
         </p>
       </div>
@@ -1451,9 +972,8 @@ export default function App() {
 
   useEffect(() => {
     const handleScroll = () => {
-      const sections = ['home', 'life', 'gallery', 'funeral', 'guestbook', 'tribute', 'contact'];
+      const sections = ['home', 'life', 'gallery', 'funeral', 'guestbook', 'contact'];
       const scrollPosition = window.scrollY + 150;
-
       for (const section of sections) {
         const element = document.getElementById(section);
         if (element) {
@@ -1465,28 +985,24 @@ export default function App() {
         }
       }
     };
-
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const scrollToSection = useCallback((sectionId) => {
     const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
+    if (element) element.scrollIntoView({ behavior: 'smooth' });
     setActiveSection(sectionId);
   }, []);
 
   return (
-    <div className="min-h-screen bg-stone-950 text-cream antialiased">
+    <div className="min-h-screen bg-cream text-charcoal antialiased">
       <Navigation activeSection={activeSection} setActiveSection={scrollToSection} />
       <HeroSection />
       <LifeSection />
       <GallerySection />
       <FuneralSection />
       <GuestbookSection />
-      <TributeSection />
       <ContactSection />
       <Footer />
     </div>
