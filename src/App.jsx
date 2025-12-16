@@ -11,8 +11,8 @@ const FORMSPREE_RSVP = 'https://formspree.io/f/xgvgjrzk';
 const FORMSPREE_CONTACT = 'https://formspree.io/f/xkgdlkzz';
 
 // Cloudinary configuration (create free account at cloudinary.com)
-const CLOUDINARY_CLOUD_NAME = 'YOUR_CLOUD_NAME';
-const CLOUDINARY_UPLOAD_PRESET = 'YOUR_UPLOAD_PRESET';
+const CLOUDINARY_CLOUD_NAME = 'db967oq9r';
+const CLOUDINARY_UPLOAD_PRESET = 'memorial_tributes';
 
 // Live stream configuration
 const STREAM_CONFIG = {
