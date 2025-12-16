@@ -1,5 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { addGuestbookEntry, getGuestbookEntries, addRSVP, addContactMessage } from './firebase';
+
+// Formspree endpoint - Replace with your own form ID from https://formspree.io
+const FORMSPREE_GUESTBOOK = 'https://formspree.io/f/YOUR_GUESTBOOK_FORM_ID';
+const FORMSPREE_RSVP = 'https://formspree.io/f/YOUR_RSVP_FORM_ID';
+const FORMSPREE_CONTACT = 'https://formspree.io/f/YOUR_CONTACT_FORM_ID';
 
 // ============================================
 // PAGE LOADER COMPONENT
@@ -728,7 +732,7 @@ const FuneralSection = () => {
 };
 
 // ============================================
-// GUESTBOOK SECTION (with Firebase)
+// GUESTBOOK SECTION (with Formspree)
 // ============================================
 
 const GuestbookSection = ({ showToast }) => {
@@ -737,46 +741,35 @@ const GuestbookSection = ({ showToast }) => {
   ]);
   const [formData, setFormData] = useState({ name: '', location: '', message: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    loadEntries();
-  }, []);
-
-  const loadEntries = async () => {
-    try {
-      const fetchedEntries = await getGuestbookEntries();
-      if (fetchedEntries.length > 0) {
-        setEntries([
-          { id: 'welcome', name: 'The Family', location: 'Accra, Ghana', message: 'We welcome all who knew and loved Grandma to share their memories here. Your words mean everything to us.', date: 'December 2025' },
-          ...fetchedEntries
-        ]);
-      }
-    } catch (error) {
-      console.error('Error loading entries:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
-      const newEntry = await addGuestbookEntry({
-        name: formData.name,
-        location: formData.location || 'Unknown location',
-        message: formData.message
+      const response = await fetch(FORMSPREE_GUESTBOOK, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          location: formData.location || 'Not specified',
+          message: formData.message,
+          _subject: `New Guestbook Entry from ${formData.name}`
+        })
       });
 
-      setEntries(prev => [
-        prev[0],
-        { ...newEntry, date: 'Just now' },
-        ...prev.slice(1)
-      ]);
-      setFormData({ name: '', location: '', message: '' });
-      showToast('Your tribute has been added. Thank you for sharing!', 'success');
+      if (response.ok) {
+        // Add to local display
+        setEntries(prev => [
+          prev[0],
+          { id: Date.now(), name: formData.name, location: formData.location || 'Not specified', message: formData.message, date: 'Just now' },
+          ...prev.slice(1)
+        ]);
+        setFormData({ name: '', location: '', message: '' });
+        showToast('Your tribute has been added. Thank you for sharing!', 'success');
+      } else {
+        throw new Error('Submission failed');
+      }
     } catch (error) {
       showToast('Failed to submit. Please try again.', 'error');
     } finally {
@@ -820,30 +813,23 @@ const GuestbookSection = ({ showToast }) => {
         </AnimatedSection>
 
         <div className="space-y-6">
-          {isLoading ? (
-            <div className="text-center py-8">
-              <div className="w-8 h-8 border-2 border-gold border-t-transparent rounded-full animate-spin mx-auto" />
-              <p className="text-warm-gray mt-4">Loading tributes...</p>
-            </div>
-          ) : (
-            entries.map((entry, index) => (
-              <AnimatedSection key={entry.id} delay={index * 100}>
-                <Card className="p-6 border-l-4 border-gold" hover={false}>
-                  <p className="text-charcoal text-lg italic mb-4">"{entry.message}"</p>
-                  <div className="flex items-center justify-between flex-wrap gap-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gold to-gold-dark flex items-center justify-center text-white font-medium">{entry.name.charAt(0)}</div>
-                      <div>
-                        <p className="font-medium text-charcoal">{entry.name}</p>
-                        {entry.location && <p className="text-sm text-warm-gray">{entry.location}</p>}
-                      </div>
+          {entries.map((entry, index) => (
+            <AnimatedSection key={entry.id} delay={index * 100}>
+              <Card className="p-6 border-l-4 border-gold" hover={false}>
+                <p className="text-charcoal text-lg italic mb-4">"{entry.message}"</p>
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gold to-gold-dark flex items-center justify-center text-white font-medium">{entry.name.charAt(0)}</div>
+                    <div>
+                      <p className="font-medium text-charcoal">{entry.name}</p>
+                      {entry.location && <p className="text-sm text-warm-gray">{entry.location}</p>}
                     </div>
-                    <span className="text-sm text-warm-gray">{entry.date}</span>
                   </div>
-                </Card>
-              </AnimatedSection>
-            ))
-          )}
+                  <span className="text-sm text-warm-gray">{entry.date}</span>
+                </div>
+              </Card>
+            </AnimatedSection>
+          ))}
         </div>
       </div>
     </section>
@@ -851,7 +837,7 @@ const GuestbookSection = ({ showToast }) => {
 };
 
 // ============================================
-// CONTACT SECTION (with Firebase)
+// CONTACT SECTION (with Formspree)
 // ============================================
 
 const ContactSection = ({ showToast }) => {
@@ -864,24 +850,35 @@ const ContactSection = ({ showToast }) => {
     setIsSubmitting(true);
 
     try {
-      if (formType === 'rsvp') {
-        await addRSVP({
-          name: formData.name,
-          phone: formData.phone,
-          attending: formData.attending,
-          guests: parseInt(formData.guests) || 1,
-          message: formData.message
-        });
-        showToast('RSVP submitted successfully. Thank you!', 'success');
+      const endpoint = formType === 'rsvp' ? FORMSPREE_RSVP : FORMSPREE_CONTACT;
+      const data = formType === 'rsvp'
+        ? {
+            name: formData.name,
+            phone: formData.phone,
+            attending: formData.attending,
+            guests: formData.guests,
+            message: formData.message,
+            _subject: `RSVP from ${formData.name} - ${formData.attending === 'yes' ? 'Attending' : 'Not Attending'}`
+          }
+        : {
+            name: formData.name,
+            phone: formData.phone,
+            message: formData.message,
+            _subject: `Contact Message from ${formData.name}`
+          };
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      if (response.ok) {
+        showToast(formType === 'rsvp' ? 'RSVP submitted successfully. Thank you!' : 'Message sent successfully!', 'success');
+        setFormData({ name: '', phone: '', message: '', attending: '', guests: '1' });
       } else {
-        await addContactMessage({
-          name: formData.name,
-          phone: formData.phone,
-          message: formData.message
-        });
-        showToast('Message sent successfully!', 'success');
+        throw new Error('Submission failed');
       }
-      setFormData({ name: '', phone: '', message: '', attending: '', guests: '1' });
     } catch (error) {
       showToast('Failed to submit. Please try again.', 'error');
     } finally {
