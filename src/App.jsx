@@ -39,7 +39,7 @@ const MUSIC_PLAYLIST = [
   { title: 'Blessed Assurance', artist: 'Traditional Hymn', url: '' }
 ];
 
-// Family tree data (placeholder - update with real family info)
+// Family tree data
 const FAMILY_DATA = {
   matriarch: {
     name: 'Josephine Worla Ameovi',
@@ -47,16 +47,12 @@ const FAMILY_DATA = {
     years: '1948 - 2025'
   },
   children: [
-    { id: 1, name: 'Child 1', relation: 'Son/Daughter' },
-    { id: 2, name: 'Child 2', relation: 'Son/Daughter' },
-    { id: 3, name: 'Child 3', relation: 'Son/Daughter' }
+    { id: 1, name: 'John Marion K. Hodges', relation: 'Son' },
+    { id: 2, name: 'Osborn M.D.K. Hodges', relation: 'Son' }
   ],
   grandchildren: [
-    { id: 1, name: 'Grandchild 1', parentId: 1 },
-    { id: 2, name: 'Grandchild 2', parentId: 1 },
-    { id: 3, name: 'Grandchild 3', parentId: 2 },
-    { id: 4, name: 'Grandchild 4', parentId: 2 },
-    { id: 5, name: 'Grandchild 5', parentId: 3 }
+    { id: 1, name: 'Ria Hodges', parentId: 1 },
+    { id: 2, name: 'Gayle Hodges', parentId: 2 }
   ]
 };
 
