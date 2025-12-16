@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 
-// Formspree endpoint - Replace with your own form ID from https://formspree.io
-const FORMSPREE_GUESTBOOK = 'https://formspree.io/f/YOUR_GUESTBOOK_FORM_ID';
-const FORMSPREE_RSVP = 'https://formspree.io/f/YOUR_RSVP_FORM_ID';
-const FORMSPREE_CONTACT = 'https://formspree.io/f/YOUR_CONTACT_FORM_ID';
+// Formspree endpoints
+const FORMSPREE_GUESTBOOK = 'https://formspree.io/f/movgoyle';
+const FORMSPREE_RSVP = 'https://formspree.io/f/xgvgjrzk';
+const FORMSPREE_CONTACT = 'https://formspree.io/f/xkgdlkzz';
 
 // ============================================
 // PAGE LOADER COMPONENT
