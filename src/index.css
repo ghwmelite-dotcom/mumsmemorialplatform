@@ -1,0 +1,577 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Lato:wght@300;400;500;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Kente-inspired color palette */
+  --gold: #D4AF37;
+  --gold-light: #F5D76E;
+  --burgundy: #8B1538;
+  --forest: #1A5D1A;
+  --cream: #FAF8F5;
+  --stone-950: #0C0A09;
+  --stone-900: #1C1917;
+  --stone-800: #292524;
+  --stone-700: #44403C;
+  --stone-600: #57534E;
+  --stone-500: #78716C;
+  --stone-400: #A8A29E;
+  --stone-300: #D6D3D1;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: 'Lato', sans-serif;
+    background-color: var(--stone-950);
+    color: var(--cream);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--stone-900);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, var(--gold), var(--gold-light));
+    border-radius: 5px;
+    border: 2px solid var(--stone-900);
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, var(--gold-light), var(--gold));
+  }
+
+  /* Firefox scrollbar */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--gold) var(--stone-900);
+  }
+}
+
+@layer components {
+  .font-display {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 500;
+  }
+}
+
+@layer utilities {
+  .text-gold {
+    color: var(--gold);
+  }
+
+  .text-gold-light {
+    color: var(--gold-light);
+  }
+
+  .text-burgundy {
+    color: var(--burgundy);
+  }
+
+  .text-forest {
+    color: var(--forest);
+  }
+
+  .text-cream {
+    color: var(--cream);
+  }
+
+  .bg-gold {
+    background-color: var(--gold);
+  }
+
+  .bg-gold-light {
+    background-color: var(--gold-light);
+  }
+
+  .bg-burgundy {
+    background-color: var(--burgundy);
+  }
+
+  .bg-forest {
+    background-color: var(--forest);
+  }
+
+  .bg-cream {
+    background-color: var(--cream);
+  }
+
+  .border-gold {
+    border-color: var(--gold);
+  }
+
+  .border-burgundy {
+    border-color: var(--burgundy);
+  }
+
+  .border-forest {
+    border-color: var(--forest);
+  }
+
+  .shadow-gold {
+    --tw-shadow-color: var(--gold);
+  }
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+/* Base fade animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.6s ease-out forwards;
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.8s ease-out forwards;
+}
+
+/* Modal entrance animation */
+@keyframes modalEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-modal-enter {
+  animation: modalEnter 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Floating particle animation */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0) translateX(0);
+    opacity: 0.1;
+  }
+  25% {
+    transform: translateY(-30px) translateX(10px);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translateY(-15px) translateX(-10px);
+    opacity: 0.2;
+  }
+  75% {
+    transform: translateY(-40px) translateX(5px);
+    opacity: 0.25;
+  }
+}
+
+.animate-float {
+  animation: float 20s ease-in-out infinite;
+}
+
+/* Gradient orb animations */
+@keyframes orbFloat {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(30px, -30px) scale(1.05);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.95);
+  }
+}
+
+@keyframes orbFloatReverse {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(-30px, 30px) scale(0.95);
+  }
+  66% {
+    transform: translate(20px, -20px) scale(1.05);
+  }
+}
+
+@keyframes orbPulse {
+  0%, 100% {
+    opacity: 0.1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.2;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+}
+
+.animate-orb-float {
+  animation: orbFloat 15s ease-in-out infinite;
+}
+
+.animate-orb-float-reverse {
+  animation: orbFloatReverse 18s ease-in-out infinite;
+}
+
+.animate-orb-pulse {
+  animation: orbPulse 10s ease-in-out infinite;
+}
+
+/* Ring pulse animations */
+@keyframes ringPulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.1;
+  }
+  100% {
+    transform: scale(1.2);
+    opacity: 0;
+  }
+}
+
+@keyframes ringPulseDelay {
+  0% {
+    transform: scale(1);
+    opacity: 0.2;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 0.1;
+  }
+  100% {
+    transform: scale(1.3);
+    opacity: 0;
+  }
+}
+
+.animate-ring-pulse {
+  animation: ringPulse 3s ease-out infinite;
+}
+
+.animate-ring-pulse-delay {
+  animation: ringPulseDelay 3s ease-out infinite 1.5s;
+}
+
+/* Gentle float animation */
+@keyframes gentleFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-gentle-float {
+  animation: gentleFloat 3s ease-in-out infinite;
+}
+
+/* Slow bounce animation */
+@keyframes bounceSlow {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.animate-bounce-slow {
+  animation: bounceSlow 2s ease-in-out infinite;
+}
+
+/* Text shimmer animation */
+@keyframes textShimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.animate-text-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--gold) 0%,
+    var(--gold-light) 25%,
+    var(--gold) 50%,
+    var(--gold-light) 75%,
+    var(--gold) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: textShimmer 4s linear infinite;
+}
+
+/* Line expand animation */
+@keyframes lineExpand {
+  from {
+    width: 0;
+  }
+  to {
+    width: 4rem;
+  }
+}
+
+.animate-line-expand {
+  animation: lineExpand 1s ease-out forwards;
+  animation-delay: 0.5s;
+}
+
+/* Subtle pulse animation */
+@keyframes pulseSubtle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.animate-pulse-subtle {
+  animation: pulseSubtle 3s ease-in-out infinite;
+}
+
+/* Kente shimmer animation */
+@keyframes kenteShimmer {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.animate-kente-shimmer {
+  animation: kenteShimmer 2s ease-in-out infinite;
+}
+
+.animate-kente-shimmer-delay {
+  animation: kenteShimmer 2s ease-in-out infinite 1s;
+}
+
+/* Gentle pulse for hero */
+@keyframes gentlePulse {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.animate-gentlePulse {
+  animation: gentlePulse 3s ease-in-out infinite;
+}
+
+/* Staggered animation delays */
+.delay-100 { animation-delay: 0.1s; }
+.delay-200 { animation-delay: 0.2s; }
+.delay-300 { animation-delay: 0.3s; }
+.delay-400 { animation-delay: 0.4s; }
+.delay-500 { animation-delay: 0.5s; }
+.delay-600 { animation-delay: 0.6s; }
+.delay-700 { animation-delay: 0.7s; }
+.delay-800 { animation-delay: 0.8s; }
+.delay-900 { animation-delay: 0.9s; }
+.delay-1000 { animation-delay: 1s; }
+
+/* ============================================
+   SELECTION & FOCUS STYLES
+   ============================================ */
+
+::selection {
+  background-color: var(--gold);
+  color: var(--stone-950);
+}
+
+*:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+/* ============================================
+   GRADIENT TEXT UTILITY
+   ============================================ */
+
+.gradient-text {
+  background: linear-gradient(135deg, var(--gold), var(--gold-light));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ============================================
+   GLASS MORPHISM UTILITIES
+   ============================================ */
+
+.glass {
+  background: rgba(28, 25, 23, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(212, 175, 55, 0.1);
+}
+
+.glass-gold {
+  background: rgba(212, 175, 55, 0.1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+/* ============================================
+   HOVER EFFECTS
+   ============================================ */
+
+.hover-lift {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.hover-glow {
+  transition: box-shadow 0.3s ease;
+}
+
+.hover-glow:hover {
+  box-shadow: 0 0 30px rgba(212, 175, 55, 0.3);
+}
+
+/* ============================================
+   CUSTOM BORDER ANIMATIONS
+   ============================================ */
+
+@keyframes borderGlow {
+  0%, 100% {
+    border-color: rgba(212, 175, 55, 0.3);
+  }
+  50% {
+    border-color: rgba(212, 175, 55, 0.6);
+  }
+}
+
+.animate-border-glow {
+  animation: borderGlow 2s ease-in-out infinite;
+}
+
+/* ============================================
+   LOADING SPINNER
+   ============================================ */
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* ============================================
+   PRINT STYLES
+   ============================================ */
+
+@media print {
+  body {
+    background: white;
+    color: black;
+  }
+
+  nav, button, form, .no-print {
+    display: none !important;
+  }
+
+  .animate-fadeIn,
+  .animate-fadeInUp,
+  .animate-float,
+  .animate-orb-float,
+  .animate-orb-float-reverse,
+  .animate-orb-pulse,
+  .animate-ring-pulse,
+  .animate-ring-pulse-delay,
+  .animate-gentle-float,
+  .animate-bounce-slow,
+  .animate-text-shimmer,
+  .animate-pulse-subtle,
+  .animate-kente-shimmer,
+  .animate-kente-shimmer-delay,
+  .animate-gentlePulse,
+  .animate-border-glow {
+    animation: none !important;
+  }
+}
+
+/* ============================================
+   REDUCED MOTION
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* ============================================
+   RESPONSIVE UTILITIES
+   ============================================ */
+
+@media (max-width: 640px) {
+  .animate-float {
+    animation-duration: 25s;
+  }
+
+  .animate-orb-float,
+  .animate-orb-float-reverse {
+    animation-duration: 20s;
+  }
+}
