@@ -196,6 +196,34 @@ const useMouseParallax = (intensity = 0.02) => {
   return position;
 };
 
+// Staggered children animation hook
+const useStaggeredReveal = (itemCount, baseDelay = 100) => {
+  const [ref, isVisible] = useScrollReveal();
+  const getDelay = (index) => isVisible ? index * baseDelay : 0;
+  return { ref, isVisible, getDelay };
+};
+
+// Counter animation hook for numbers
+const useCountUp = (end, duration = 2000, start = 0) => {
+  const [count, setCount] = useState(start);
+  const [ref, isVisible] = useScrollReveal();
+
+  useEffect(() => {
+    if (!isVisible) return;
+    let startTime = null;
+    const animate = (currentTime) => {
+      if (!startTime) startTime = currentTime;
+      const progress = Math.min((currentTime - startTime) / duration, 1);
+      const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+      setCount(Math.floor(easeOutQuart * (end - start) + start));
+      if (progress < 1) requestAnimationFrame(animate);
+    };
+    requestAnimationFrame(animate);
+  }, [isVisible, end, duration, start]);
+
+  return { ref, count, isVisible };
+};
+
 // ============================================
 // DECORATIVE ELEMENTS
 // ============================================
@@ -234,15 +262,17 @@ const SoftGradientOrbs = () => {
   );
 };
 
-const KenteBorder = ({ className = '' }) => (
-  <div className={`flex items-center justify-center gap-1 ${className}`}>
-    {Array.from({ length: 30 }).map((_, i) => (
-      <div key={i} className="flex gap-0.5">
-        <div className="w-3 h-2 bg-gradient-to-b from-gold to-gold-dark rounded-sm" />
-        <div className="w-1.5 h-2 bg-forest rounded-sm" />
-        <div className="w-1.5 h-2 bg-burgundy rounded-sm" />
-      </div>
-    ))}
+const KenteBorder = ({ className = '', animated = true }) => (
+  <div className={`flex items-center justify-center gap-1 overflow-hidden ${className}`}>
+    <div className={`flex gap-1 ${animated ? 'animate-kente-shimmer' : ''}`}>
+      {Array.from({ length: 40 }).map((_, i) => (
+        <div key={i} className="flex gap-0.5 flex-shrink-0">
+          <div className="w-3 h-2 bg-gradient-to-b from-gold to-gold-dark rounded-sm transition-transform hover:scale-110" />
+          <div className="w-1.5 h-2 bg-forest rounded-sm" />
+          <div className="w-1.5 h-2 bg-burgundy rounded-sm" />
+        </div>
+      ))}
+    </div>
   </div>
 );
 
@@ -266,10 +296,56 @@ const CornerOrnament = ({ position = 'top-left' }) => {
 // REUSABLE COMPONENTS
 // ============================================
 
-const AnimatedSection = ({ children, className = '', delay = 0 }) => {
+const AnimatedSection = ({ children, className = '', delay = 0, animation = 'fade-up' }) => {
   const [ref, isVisible] = useScrollReveal();
+
+  const getAnimationStyles = () => {
+    const baseTransition = `transition-all duration-700 ease-out`;
+    const delayStyle = { transitionDelay: `${delay}ms` };
+
+    switch (animation) {
+      case 'fade-up':
+        return {
+          className: baseTransition,
+          style: { ...delayStyle, opacity: isVisible ? 1 : 0, transform: isVisible ? 'translateY(0)' : 'translateY(40px)' }
+        };
+      case 'fade-left':
+        return {
+          className: baseTransition,
+          style: { ...delayStyle, opacity: isVisible ? 1 : 0, transform: isVisible ? 'translateX(0)' : 'translateX(-60px)' }
+        };
+      case 'fade-right':
+        return {
+          className: baseTransition,
+          style: { ...delayStyle, opacity: isVisible ? 1 : 0, transform: isVisible ? 'translateX(0)' : 'translateX(60px)' }
+        };
+      case 'zoom':
+        return {
+          className: `${baseTransition} duration-500`,
+          style: { ...delayStyle, opacity: isVisible ? 1 : 0, transform: isVisible ? 'scale(1)' : 'scale(0.85)' }
+        };
+      case 'rotate':
+        return {
+          className: baseTransition,
+          style: { ...delayStyle, opacity: isVisible ? 1 : 0, transform: isVisible ? 'translateY(0) rotate(0deg)' : 'translateY(30px) rotate(-3deg)' }
+        };
+      case 'flip':
+        return {
+          className: `${baseTransition} perspective-1000`,
+          style: { ...delayStyle, opacity: isVisible ? 1 : 0, transform: isVisible ? 'rotateX(0deg)' : 'rotateX(15deg)', transformOrigin: 'center bottom' }
+        };
+      default:
+        return {
+          className: baseTransition,
+          style: { ...delayStyle, opacity: isVisible ? 1 : 0, transform: isVisible ? 'translateY(0)' : 'translateY(40px)' }
+        };
+    }
+  };
+
+  const { className: animClass, style } = getAnimationStyles();
+
   return (
-    <div ref={ref} className={`transition-all duration-1000 ease-out ${className}`} style={{ opacity: isVisible ? 1 : 0, transform: isVisible ? 'translateY(0)' : 'translateY(40px)', transitionDelay: `${delay}ms` }}>
+    <div ref={ref} className={`${animClass} ${className}`} style={style}>
       {children}
     </div>
   );
@@ -301,10 +377,41 @@ const SectionHeading = ({ eyebrow, title, subtitle, light = false }) => {
   );
 };
 
-const Card = ({ children, className = '', hover = true, delay = 0 }) => {
+const Card = ({ children, className = '', hover = true, delay = 0, tilt = false }) => {
   const [ref, isVisible] = useScrollReveal();
+  const [tiltStyle, setTiltStyle] = useState({});
+
+  const handleMouseMove = (e) => {
+    if (!tilt) return;
+    const card = e.currentTarget;
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    const rotateX = (y - centerY) / 20;
+    const rotateY = (centerX - x) / 20;
+    setTiltStyle({ transform: `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-5px)` });
+  };
+
+  const handleMouseLeave = () => {
+    if (!tilt) return;
+    setTiltStyle({});
+  };
+
   return (
-    <div ref={ref} className={`bg-white rounded-2xl shadow-soft transition-all duration-500 ${hover ? 'hover:shadow-elevated hover:-translate-y-1' : ''} ${className}`} style={{ opacity: isVisible ? 1 : 0, transform: isVisible ? 'translateY(0)' : 'translateY(30px)', transitionDelay: `${delay}ms` }}>
+    <div
+      ref={ref}
+      className={`bg-white rounded-2xl shadow-soft transition-all duration-500 ${hover ? 'hover:shadow-elevated' : ''} ${tilt ? 'card-tilt' : hover ? 'hover:-translate-y-2' : ''} ${className}`}
+      style={{
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? (tiltStyle.transform || 'translateY(0)') : 'translateY(30px)',
+        transitionDelay: `${delay}ms`,
+        ...tiltStyle
+      }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+    >
       {children}
     </div>
   );
@@ -312,13 +419,18 @@ const Card = ({ children, className = '', hover = true, delay = 0 }) => {
 
 const Button = ({ children, variant = 'primary', className = '', onClick, disabled = false, type = 'button' }) => {
   const variants = {
-    primary: 'bg-gradient-to-r from-gold to-gold-dark text-white hover:shadow-gold-glow',
-    secondary: 'bg-white text-gold-dark border-2 border-gold hover:bg-gold hover:text-white',
-    outline: 'bg-transparent border-2 border-white text-white hover:bg-white hover:text-charcoal'
+    primary: 'bg-gradient-to-r from-gold to-gold-dark text-white hover:shadow-gold-glow hover:scale-105',
+    secondary: 'bg-white text-gold-dark border-2 border-gold hover:bg-gold hover:text-white hover:scale-105',
+    outline: 'bg-transparent border-2 border-white text-white hover:bg-white hover:text-charcoal hover:scale-105'
   };
   return (
-    <button type={type} onClick={onClick} disabled={disabled} className={`px-8 py-3 rounded-full font-medium transition-all duration-300 ${variants[variant]} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}>
-      {children}
+    <button
+      type={type}
+      onClick={onClick}
+      disabled={disabled}
+      className={`px-8 py-3 rounded-full font-medium transition-all duration-300 btn-press active:scale-95 ${variants[variant]} ${disabled ? 'opacity-50 cursor-not-allowed' : ''} ${className}`}
+    >
+      <span className="relative z-10 flex items-center justify-center gap-2">{children}</span>
     </button>
   );
 };
@@ -595,6 +707,7 @@ const HeroSection = () => {
 
 const LifeSection = () => {
   const { t } = useLanguage();
+  const [lineRef, lineVisible] = useScrollReveal();
 
   const milestones = [
     { year: t('life.milestones.born.year'), title: t('life.milestones.born.title'), description: t('life.milestones.born.description'), icon: '🌟' },
@@ -608,26 +721,41 @@ const LifeSection = () => {
       <CornerOrnament position="top-left" />
       <CornerOrnament position="top-right" />
 
+      {/* Floating decorative elements */}
+      <div className="absolute top-20 right-10 w-32 h-32 opacity-10 animate-parallax-float">
+        <div className="w-full h-full rounded-full border-2 border-gold" />
+      </div>
+      <div className="absolute bottom-40 left-10 w-24 h-24 opacity-10 animate-parallax-float" style={{ animationDelay: '-5s' }}>
+        <div className="w-full h-full rounded-full border-2 border-burgundy" />
+      </div>
+
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative">
         <SectionHeading eyebrow={t('life.eyebrow')} title={t('life.title')} subtitle={t('life.subtitle')} />
 
-        <div className="relative">
-          <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-gold/0 via-gold/50 to-gold/0 hidden md:block" />
+        <div className="relative" ref={lineRef}>
+          {/* Animated timeline line */}
+          <div className="absolute left-1/2 top-0 bottom-0 w-px hidden md:block overflow-hidden">
+            <div
+              className="w-full bg-gradient-to-b from-gold/0 via-gold to-gold/0 transition-all duration-1500 ease-out"
+              style={{ height: lineVisible ? '100%' : '0%' }}
+            />
+          </div>
 
           <div className="space-y-12 md:space-y-0">
             {milestones.map((milestone, index) => (
-              <AnimatedSection key={index} delay={index * 150}>
-                <div className={`md:flex items-center gap-8 ${index % 2 === 0 ? '' : 'md:flex-row-reverse'}`}>
+              <AnimatedSection key={index} delay={index * 200} animation={index % 2 === 0 ? 'fade-left' : 'fade-right'}>
+                <div className={`md:flex items-center gap-8 ${index % 2 === 0 ? '' : 'md:flex-row-reverse'} mb-12`}>
                   <div className={`md:w-1/2 ${index % 2 === 0 ? 'md:text-right md:pr-12' : 'md:pl-12'}`}>
-                    <Card className="p-6 md:p-8 inline-block">
-                      <span className="text-4xl mb-4 block">{milestone.icon}</span>
-                      <span className="inline-block px-3 py-1 bg-gold/10 text-gold-dark rounded-full text-sm font-medium mb-3">{milestone.year}</span>
-                      <h3 className="font-display text-2xl text-charcoal mb-3">{milestone.title}</h3>
+                    <Card className="p-6 md:p-8 inline-block group" tilt>
+                      <span className="text-4xl mb-4 block transform transition-transform duration-500 group-hover:scale-125 group-hover:rotate-12">{milestone.icon}</span>
+                      <span className="inline-block px-3 py-1 bg-gold/10 text-gold-dark rounded-full text-sm font-medium mb-3 transition-all duration-300 group-hover:bg-gold group-hover:text-white">{milestone.year}</span>
+                      <h3 className="font-display text-2xl text-charcoal mb-3 transition-colors duration-300 group-hover:text-gold-dark">{milestone.title}</h3>
                       <p className="text-warm-gray leading-relaxed">{milestone.description}</p>
                     </Card>
                   </div>
-                  <div className="hidden md:flex items-center justify-center">
-                    <div className="w-4 h-4 rounded-full bg-gold border-4 border-cream shadow-lg" />
+                  <div className="hidden md:flex items-center justify-center relative">
+                    <div className="absolute w-8 h-8 rounded-full bg-gold/20 animate-ripple" />
+                    <div className="w-4 h-4 rounded-full bg-gold border-4 border-cream shadow-lg relative z-10 transition-transform duration-300 hover:scale-150" />
                   </div>
                   <div className="md:w-1/2" />
                 </div>
@@ -636,12 +764,12 @@ const LifeSection = () => {
           </div>
         </div>
 
-        <AnimatedSection delay={600}>
+        <AnimatedSection delay={800} animation="zoom">
           <div className="mt-20 text-center">
-            <div className="inline-block relative">
-              <span className="absolute -top-6 -left-4 text-6xl text-gold/20 font-serif">"</span>
-              <p className="text-2xl md:text-3xl font-display text-charcoal italic px-8">{t('life.quote')}</p>
-              <span className="absolute -bottom-8 -right-4 text-6xl text-gold/20 font-serif rotate-180">"</span>
+            <div className="inline-block relative group">
+              <span className="absolute -top-6 -left-4 text-6xl text-gold/20 font-serif transition-all duration-500 group-hover:text-gold/40 group-hover:-translate-x-2 group-hover:-translate-y-2">"</span>
+              <p className="text-2xl md:text-3xl font-display text-charcoal italic px-8 transition-colors duration-500 group-hover:text-gold-dark">{t('life.quote')}</p>
+              <span className="absolute -bottom-8 -right-4 text-6xl text-gold/20 font-serif rotate-180 transition-all duration-500 group-hover:text-gold/40 group-hover:translate-x-2 group-hover:translate-y-2">"</span>
             </div>
             <p className="text-warm-gray mt-8">— {t('life.quoteAuthor')}</p>
           </div>
@@ -658,67 +786,101 @@ const LifeSection = () => {
 const FamilyTreeSection = () => {
   const { t } = useLanguage();
   const [selectedMember, setSelectedMember] = useState(null);
+  const [branchRef, branchVisible] = useScrollReveal();
 
   return (
     <section id="family" className="py-24 md:py-32 bg-white relative overflow-hidden">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Decorative tree elements */}
+      <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
+        <div className="absolute -top-20 -left-20 w-80 h-80 border border-forest/5 rounded-full animate-pulse-soft" />
+        <div className="absolute -bottom-20 -right-20 w-96 h-96 border border-gold/5 rounded-full animate-pulse-soft" style={{ animationDelay: '-4s' }} />
+      </div>
+
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative">
         <SectionHeading eyebrow={t('family.eyebrow')} title={t('family.title')} subtitle={t('family.subtitle')} />
 
-        <div className="flex flex-col items-center">
+        <div className="flex flex-col items-center" ref={branchRef}>
           {/* Matriarch */}
-          <AnimatedSection>
+          <AnimatedSection animation="zoom">
             <div className="text-center mb-8">
-              <button onClick={() => setSelectedMember(FAMILY_DATA.matriarch)} className="group">
-                <div className="w-32 h-32 mx-auto rounded-full bg-gradient-to-br from-gold to-gold-dark p-1 shadow-gold-glow group-hover:scale-105 transition-transform">
-                  <div className="w-full h-full rounded-full bg-cream flex items-center justify-center">
-                    <span className="text-4xl">👑</span>
+              <button onClick={() => setSelectedMember(FAMILY_DATA.matriarch)} className="group relative">
+                {/* Glow effect */}
+                <div className="absolute inset-0 w-32 h-32 mx-auto rounded-full bg-gold/20 animate-glow-pulse blur-xl" />
+                <div className="relative w-32 h-32 mx-auto rounded-full bg-gradient-to-br from-gold to-gold-dark p-1 shadow-gold-glow group-hover:scale-110 transition-all duration-500">
+                  <div className="w-full h-full rounded-full bg-cream flex items-center justify-center group-hover:bg-gold/10 transition-colors duration-300">
+                    <span className="text-4xl transition-transform duration-500 group-hover:scale-110">👑</span>
                   </div>
                 </div>
-                <p className="mt-3 font-display text-xl text-charcoal">{FAMILY_DATA.matriarch.name}</p>
-                <p className="text-gold text-sm">{t('family.matriarch')}</p>
+                <p className="mt-3 font-display text-xl text-charcoal group-hover:text-gold-dark transition-colors duration-300">{FAMILY_DATA.matriarch.name}</p>
+                <p className="text-gold text-sm animate-gradient-text">{t('family.matriarch')}</p>
               </button>
             </div>
           </AnimatedSection>
 
-          {/* Connector Line */}
-          <div className="w-px h-12 bg-gradient-to-b from-gold to-gold/30" />
+          {/* Animated Connector Line */}
+          <div className="w-px h-12 overflow-hidden">
+            <div
+              className="w-full bg-gradient-to-b from-gold to-gold/30 transition-all duration-700 ease-out"
+              style={{ height: branchVisible ? '100%' : '0%', transitionDelay: '300ms' }}
+            />
+          </div>
 
           {/* Children Row */}
-          <AnimatedSection delay={200}>
+          <AnimatedSection delay={400}>
             <div className="text-center mb-4">
-              <span className="inline-block px-4 py-1 bg-burgundy/10 text-burgundy rounded-full text-sm font-medium">{t('family.children')}</span>
+              <span className="inline-block px-4 py-1 bg-burgundy/10 text-burgundy rounded-full text-sm font-medium magnetic-hover">{t('family.children')}</span>
             </div>
             <div className="flex flex-wrap justify-center gap-8 mb-8">
               {FAMILY_DATA.children.map((child, index) => (
-                <button key={child.id} onClick={() => setSelectedMember(child)} className="group text-center">
-                  <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-burgundy to-burgundy-dark p-0.5 group-hover:scale-105 transition-transform">
-                    <div className="w-full h-full rounded-full bg-cream flex items-center justify-center">
-                      <span className="text-2xl">👤</span>
+                <button
+                  key={child.id}
+                  onClick={() => setSelectedMember(child)}
+                  className="group text-center"
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  <div className="relative">
+                    <div className="absolute inset-0 w-20 h-20 mx-auto rounded-full bg-burgundy/20 scale-0 group-hover:scale-150 transition-transform duration-500 opacity-50" />
+                    <div className="relative w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-burgundy to-burgundy-dark p-0.5 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+                      <div className="w-full h-full rounded-full bg-cream flex items-center justify-center group-hover:bg-burgundy/10 transition-colors duration-300">
+                        <span className="text-2xl transition-transform duration-300 group-hover:scale-125">👤</span>
+                      </div>
                     </div>
                   </div>
-                  <p className="mt-2 text-sm font-medium text-charcoal">{child.name}</p>
+                  <p className="mt-2 text-sm font-medium text-charcoal group-hover:text-burgundy transition-colors duration-300">{child.name}</p>
                 </button>
               ))}
             </div>
           </AnimatedSection>
 
-          {/* Connector Line */}
-          <div className="w-px h-8 bg-gradient-to-b from-burgundy/30 to-forest/30" />
+          {/* Animated Connector Line */}
+          <div className="w-px h-8 overflow-hidden">
+            <div
+              className="w-full bg-gradient-to-b from-burgundy/30 to-forest/30 transition-all duration-700 ease-out"
+              style={{ height: branchVisible ? '100%' : '0%', transitionDelay: '600ms' }}
+            />
+          </div>
 
           {/* Grandchildren Row */}
-          <AnimatedSection delay={400}>
+          <AnimatedSection delay={700}>
             <div className="text-center mb-4">
-              <span className="inline-block px-4 py-1 bg-forest/10 text-forest rounded-full text-sm font-medium">{t('family.grandchildren')}</span>
+              <span className="inline-block px-4 py-1 bg-forest/10 text-forest rounded-full text-sm font-medium magnetic-hover">{t('family.grandchildren')}</span>
             </div>
             <div className="flex flex-wrap justify-center gap-4">
-              {FAMILY_DATA.grandchildren.map((grandchild) => (
-                <button key={grandchild.id} onClick={() => setSelectedMember(grandchild)} className="group text-center">
-                  <div className="w-14 h-14 mx-auto rounded-full bg-gradient-to-br from-forest to-forest p-0.5 group-hover:scale-105 transition-transform">
-                    <div className="w-full h-full rounded-full bg-cream flex items-center justify-center">
-                      <span className="text-lg">👤</span>
+              {FAMILY_DATA.grandchildren.map((grandchild, index) => (
+                <button
+                  key={grandchild.id}
+                  onClick={() => setSelectedMember(grandchild)}
+                  className="group text-center"
+                  style={{ animationDelay: `${index * 50}ms` }}
+                >
+                  <div className="relative">
+                    <div className="w-14 h-14 mx-auto rounded-full bg-gradient-to-br from-forest to-forest p-0.5 group-hover:scale-125 group-hover:-rotate-6 transition-all duration-500">
+                      <div className="w-full h-full rounded-full bg-cream flex items-center justify-center group-hover:bg-forest/10 transition-colors duration-300">
+                        <span className="text-lg transition-transform duration-300 group-hover:scale-110">👤</span>
+                      </div>
                     </div>
                   </div>
-                  <p className="mt-1 text-xs font-medium text-charcoal">{grandchild.name}</p>
+                  <p className="mt-1 text-xs font-medium text-charcoal group-hover:text-forest transition-colors duration-300">{grandchild.name}</p>
                 </button>
               ))}
             </div>
@@ -729,7 +891,7 @@ const FamilyTreeSection = () => {
         {selectedMember && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-charcoal/80 backdrop-blur-sm animate-fade-in" onClick={() => setSelectedMember(null)}>
             <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl animate-scale-in text-center" onClick={e => e.stopPropagation()}>
-              <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-gold to-gold-dark p-1 mb-4">
+              <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-gold to-gold-dark p-1 mb-4 animate-glow-pulse">
                 <div className="w-full h-full rounded-full bg-cream flex items-center justify-center">
                   <span className="text-4xl">👤</span>
                 </div>
@@ -738,7 +900,7 @@ const FamilyTreeSection = () => {
               {selectedMember.title && <p className="text-gold">{selectedMember.title}</p>}
               {selectedMember.relation && <p className="text-warm-gray">{selectedMember.relation}</p>}
               {selectedMember.years && <p className="text-warm-gray text-sm mt-2">{selectedMember.years}</p>}
-              <button onClick={() => setSelectedMember(null)} className="mt-6 px-6 py-2 bg-gold text-white rounded-full hover:bg-gold-dark transition-colors">
+              <button onClick={() => setSelectedMember(null)} className="mt-6 px-6 py-2 bg-gold text-white rounded-full hover:bg-gold-dark hover:scale-105 active:scale-95 transition-all duration-300">
                 {t('common.close')}
               </button>
             </div>
@@ -756,6 +918,7 @@ const FamilyTreeSection = () => {
 const PhotoTimelineSection = () => {
   const { t } = useLanguage();
   const [selectedPhoto, setSelectedPhoto] = useState(null);
+  const [timelineRef, timelineVisible] = useScrollReveal();
 
   const decades = [
     { period: '1940s-50s', photos: [{ id: 1, label: 'Childhood' }] },
@@ -765,34 +928,60 @@ const PhotoTimelineSection = () => {
   ];
 
   return (
-    <section id="timeline" className="py-24 md:py-32 bg-cream relative">
+    <section id="timeline" className="py-24 md:py-32 bg-cream relative overflow-hidden">
+      {/* Decorative floating elements */}
+      <div className="absolute top-10 left-10 w-20 h-20 border border-gold/10 rounded-lg rotate-12 animate-parallax-float" />
+      <div className="absolute bottom-20 right-20 w-16 h-16 border border-burgundy/10 rounded-lg -rotate-12 animate-parallax-float" style={{ animationDelay: '-7s' }} />
+
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <SectionHeading eyebrow={t('gallery.eyebrow')} title={t('gallery.title')} subtitle={t('gallery.subtitle')} />
 
         {/* Horizontal Timeline */}
-        <div className="relative">
-          <div className="absolute top-1/2 left-0 right-0 h-1 bg-gradient-to-r from-gold/20 via-gold to-gold/20 hidden md:block" />
+        <div className="relative" ref={timelineRef}>
+          {/* Animated timeline line */}
+          <div className="absolute top-6 left-0 right-0 h-1 hidden md:block overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-gold/20 via-gold to-gold/20 animate-shimmer transition-all duration-1000"
+              style={{ width: timelineVisible ? '100%' : '0%' }}
+            />
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             {decades.map((decade, index) => (
-              <AnimatedSection key={decade.period} delay={index * 150}>
+              <AnimatedSection key={decade.period} delay={index * 150} animation="fade-up">
                 <div className="text-center mb-4">
-                  <span className="inline-block px-4 py-2 bg-gold text-white rounded-full text-sm font-bold relative z-10">
+                  <span className="inline-block px-4 py-2 bg-gold text-white rounded-full text-sm font-bold relative z-10 shadow-gold-glow magnetic-hover transition-all duration-300 hover:scale-110">
                     {decade.period}
                   </span>
                 </div>
                 <div className="space-y-4">
-                  {decade.photos.map((photo) => (
-                    <div key={photo.id} onClick={() => setSelectedPhoto(photo)} className="relative aspect-square bg-gradient-to-br from-white to-warm-white rounded-2xl overflow-hidden cursor-pointer group shadow-soft hover:shadow-elevated transition-all duration-500">
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="text-center text-charcoal/30 group-hover:text-gold/50 transition-colors">
-                          <svg className="w-10 h-10 mx-auto mb-2 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24">
+                  {decade.photos.map((photo, photoIndex) => (
+                    <div
+                      key={photo.id}
+                      onClick={() => setSelectedPhoto(photo)}
+                      className="relative aspect-square bg-gradient-to-br from-white to-warm-white rounded-2xl overflow-hidden cursor-pointer group shadow-soft hover:shadow-elevated transition-all duration-500 photo-hover"
+                      style={{ transitionDelay: `${photoIndex * 100}ms` }}
+                    >
+                      {/* Shimmer overlay */}
+                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                        <div className="absolute inset-0 animate-shimmer" />
+                      </div>
+
+                      <div className="absolute inset-0 flex items-center justify-center transition-transform duration-700 group-hover:scale-110">
+                        <div className="text-center text-charcoal/30 group-hover:text-gold transition-colors duration-300">
+                          <svg className="w-10 h-10 mx-auto mb-2 transform transition-all duration-500 group-hover:scale-125 group-hover:rotate-12" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
                           </svg>
-                          <span className="text-sm font-medium">{photo.label}</span>
+                          <span className="text-sm font-medium block transform transition-all duration-300 group-hover:translate-y-1">{photo.label}</span>
                         </div>
                       </div>
-                      <div className="absolute inset-0 bg-gradient-to-t from-charcoal/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+                      {/* Gradient overlay on hover */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-charcoal/70 via-charcoal/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500" />
+
+                      {/* Corner decorations on hover */}
+                      <div className="absolute top-2 left-2 w-6 h-6 border-l-2 border-t-2 border-gold opacity-0 group-hover:opacity-100 transition-all duration-500 transform -translate-x-2 -translate-y-2 group-hover:translate-x-0 group-hover:translate-y-0" />
+                      <div className="absolute bottom-2 right-2 w-6 h-6 border-r-2 border-b-2 border-gold opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-x-2 translate-y-2 group-hover:translate-x-0 group-hover:translate-y-0" />
                     </div>
                   ))}
                 </div>
@@ -801,8 +990,8 @@ const PhotoTimelineSection = () => {
           </div>
         </div>
 
-        <AnimatedSection delay={700}>
-          <p className="text-center text-warm-gray mt-12">{t('gallery.addNote')}</p>
+        <AnimatedSection delay={700} animation="fade-up">
+          <p className="text-center text-warm-gray mt-12 hover:text-gold transition-colors duration-300">{t('gallery.addNote')}</p>
         </AnimatedSection>
       </div>
 
@@ -811,14 +1000,14 @@ const PhotoTimelineSection = () => {
           <div className="relative max-w-4xl w-full bg-white rounded-3xl overflow-hidden shadow-2xl animate-scale-in">
             <div className="aspect-video bg-gradient-to-br from-cream to-warm-white flex items-center justify-center">
               <div className="text-center text-charcoal/40">
-                <svg className="w-20 h-20 mx-auto mb-4" fill="currentColor" viewBox="0 0 24 24">
+                <svg className="w-20 h-20 mx-auto mb-4 animate-pulse-soft" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
                 </svg>
-                <p className="text-lg">{selectedPhoto.label}</p>
+                <p className="text-lg font-display">{selectedPhoto.label}</p>
                 <p className="text-sm mt-2">Photo coming soon</p>
               </div>
             </div>
-            <button onClick={() => setSelectedPhoto(null)} className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-charcoal text-white hover:bg-gold transition-colors">
+            <button onClick={() => setSelectedPhoto(null)} className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-charcoal text-white hover:bg-gold hover:rotate-90 transition-all duration-300">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -841,6 +1030,7 @@ const CandleLightingSection = ({ showToast }) => {
     return saved ? JSON.parse(saved) : [];
   });
   const [name, setName] = useState('');
+  const { ref: countRef, count: animatedCount } = useCountUp(candles.length, 2000);
 
   useEffect(() => {
     localStorage.setItem('memorial-candles', JSON.stringify(candles));
@@ -858,50 +1048,77 @@ const CandleLightingSection = ({ showToast }) => {
 
   return (
     <section id="candles" className="py-24 md:py-32 bg-gradient-to-b from-charcoal to-charcoal-light text-white relative overflow-hidden">
-      <div className="absolute inset-0 opacity-20">
-        {candles.slice(0, 50).map((candle, i) => (
-          <div key={candle.id} className="absolute w-1 h-1 bg-gold rounded-full animate-pulse" style={{ left: `${(i * 7) % 100}%`, top: `${(i * 11) % 100}%`, animationDelay: `${i * 0.1}s` }} />
+      {/* Animated starry background */}
+      <div className="absolute inset-0">
+        {Array.from({ length: 30 }).map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-1 h-1 bg-gold rounded-full animate-twinkle"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              animationDelay: `${Math.random() * 3}s`,
+              opacity: 0.3 + Math.random() * 0.4
+            }}
+          />
         ))}
       </div>
+
+      {/* Floating light orbs */}
+      <div className="absolute top-20 left-20 w-40 h-40 bg-gold/10 rounded-full blur-3xl animate-float-slow" />
+      <div className="absolute bottom-20 right-20 w-60 h-60 bg-gold/5 rounded-full blur-3xl animate-float-slow-reverse" />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative">
         <SectionHeading eyebrow={t('candles.eyebrow')} title={t('candles.title')} subtitle={t('candles.subtitle')} light />
 
         {/* Light a Candle Form */}
-        <AnimatedSection>
+        <AnimatedSection animation="zoom">
           <div className="max-w-md mx-auto mb-16">
-            <form onSubmit={lightCandle} className="flex gap-3">
-              <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder={t('candles.yourName')} className="flex-1 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/50 focus:border-gold focus:outline-none transition-colors" />
-              <Button type="submit" className="whitespace-nowrap">{t('candles.lightCandle')}</Button>
+            <form onSubmit={lightCandle} className="flex gap-3 group">
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder={t('candles.yourName')}
+                className="flex-1 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/50 focus:border-gold focus:outline-none focus:bg-white/15 transition-all duration-300 input-animated"
+              />
+              <Button type="submit" className="whitespace-nowrap group-hover:shadow-gold-glow">{t('candles.lightCandle')}</Button>
             </form>
           </div>
         </AnimatedSection>
 
-        {/* Candle Count */}
-        <AnimatedSection delay={200}>
-          <div className="text-center mb-12">
-            <span className="text-6xl font-display text-gold">{candles.length}</span>
-            <p className="text-white/70 mt-2">{t('candles.candlesLit')}</p>
+        {/* Animated Candle Count */}
+        <AnimatedSection delay={200} animation="zoom">
+          <div className="text-center mb-12" ref={countRef}>
+            <div className="relative inline-block">
+              <div className="absolute inset-0 bg-gold/20 blur-2xl rounded-full animate-glow-pulse" />
+              <span className="relative text-7xl font-display text-gold animate-gradient-text">{animatedCount}</span>
+            </div>
+            <p className="text-white/70 mt-4">{t('candles.candlesLit')}</p>
           </div>
         </AnimatedSection>
 
-        {/* Candles Grid */}
+        {/* Candles Grid with staggered animation */}
         <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-4">
           {candles.slice(0, 50).map((candle, index) => (
-            <AnimatedSection key={candle.id} delay={index * 30} className="text-center">
-              <div className="relative mx-auto w-8">
+            <AnimatedSection key={candle.id} delay={index * 40} className="text-center group">
+              <div className="relative mx-auto w-8 cursor-pointer" title={candle.name}>
+                {/* Glow effect */}
+                <div className="absolute -top-8 left-1/2 -translate-x-1/2 w-6 h-6 bg-gold/30 rounded-full blur-md group-hover:bg-gold/50 transition-all duration-300" />
                 {/* Candle flame */}
-                <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-3 h-5 bg-gradient-to-t from-gold via-yellow-400 to-white rounded-full animate-candle-flicker opacity-90" />
+                <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-3 h-5 bg-gradient-to-t from-gold via-yellow-400 to-white rounded-full animate-candle-flicker opacity-90 group-hover:scale-125 transition-transform duration-300" />
                 {/* Candle body */}
-                <div className="w-4 h-8 mx-auto bg-gradient-to-b from-cream to-warm-white rounded-sm" />
+                <div className="w-4 h-8 mx-auto bg-gradient-to-b from-cream to-warm-white rounded-sm group-hover:from-gold/20 transition-colors duration-300" />
               </div>
-              <p className="text-xs text-white/60 mt-2 truncate">{candle.name}</p>
+              <p className="text-xs text-white/60 mt-2 truncate group-hover:text-gold transition-colors duration-300">{candle.name}</p>
             </AnimatedSection>
           ))}
         </div>
 
         {candles.length > 50 && (
-          <p className="text-center text-white/50 mt-8">+{candles.length - 50} more candles lit</p>
+          <AnimatedSection delay={2100}>
+            <p className="text-center text-white/50 mt-8 hover:text-gold/70 transition-colors duration-300 cursor-default">+{candles.length - 50} more candles lit</p>
+          </AnimatedSection>
         )}
       </div>
     </section>
@@ -915,16 +1132,19 @@ const CandleLightingSection = ({ showToast }) => {
 const LiveStreamSection = () => {
   const { t } = useLanguage();
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [prevSeconds, setPrevSeconds] = useState(0);
 
   useEffect(() => {
     const calculateTimeLeft = () => {
       const difference = STREAM_CONFIG.eventDateTime - new Date();
       if (difference > 0) {
+        const newSeconds = Math.floor((difference / 1000) % 60);
+        setPrevSeconds(timeLeft.seconds);
         setTimeLeft({
           days: Math.floor(difference / (1000 * 60 * 60 * 24)),
           hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
           minutes: Math.floor((difference / 1000 / 60) % 60),
-          seconds: Math.floor((difference / 1000) % 60)
+          seconds: newSeconds
         });
       }
     };
@@ -938,9 +1158,27 @@ const LiveStreamSection = () => {
 
   return (
     <section id="stream" className="py-24 md:py-32 bg-burgundy-dark text-white relative overflow-hidden">
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute top-20 left-20 w-64 h-64 border border-white rounded-full" />
-        <div className="absolute bottom-20 right-20 w-96 h-96 border border-white rounded-full" />
+      {/* Animated background circles */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute top-20 left-20 w-64 h-64 border border-white/10 rounded-full animate-pulse-soft" />
+        <div className="absolute bottom-20 right-20 w-96 h-96 border border-white/10 rounded-full animate-pulse-soft" style={{ animationDelay: '-4s' }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] border border-white/5 rounded-full animate-spin-slow" />
+      </div>
+
+      {/* Floating particles */}
+      <div className="absolute inset-0 pointer-events-none">
+        {Array.from({ length: 15 }).map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-2 h-2 bg-white/10 rounded-full animate-float-up-fade"
+            style={{
+              left: `${10 + (i * 6)}%`,
+              bottom: '0',
+              animationDelay: `${i * 0.5}s`,
+              animationDuration: `${4 + Math.random() * 2}s`
+            }}
+          />
+        ))}
       </div>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative">
@@ -948,37 +1186,57 @@ const LiveStreamSection = () => {
 
         {!hasStream ? (
           // Countdown Mode
-          <AnimatedSection>
+          <AnimatedSection animation="zoom">
             <div className="text-center">
-              <p className="text-white/70 mb-8">{t('stream.countdown')}</p>
+              <p className="text-white/70 mb-8 animate-pulse">{t('stream.countdown')}</p>
               <div className="flex justify-center gap-4 md:gap-8">
                 {[
-                  { value: timeLeft.days, label: t('stream.days') },
-                  { value: timeLeft.hours, label: t('stream.hours') },
-                  { value: timeLeft.minutes, label: t('stream.minutes') },
-                  { value: timeLeft.seconds, label: t('stream.seconds') }
+                  { value: timeLeft.days, label: t('stream.days'), key: 'days' },
+                  { value: timeLeft.hours, label: t('stream.hours'), key: 'hours' },
+                  { value: timeLeft.minutes, label: t('stream.minutes'), key: 'minutes' },
+                  { value: timeLeft.seconds, label: t('stream.seconds'), key: 'seconds' }
                 ].map((item, i) => (
-                  <div key={i} className="text-center">
-                    <div className="w-16 h-16 md:w-24 md:h-24 bg-white/10 backdrop-blur-sm rounded-2xl flex items-center justify-center mb-2">
-                      <span className="text-3xl md:text-5xl font-display text-gold">{item.value.toString().padStart(2, '0')}</span>
+                  <div key={item.key} className="text-center group">
+                    <div
+                      className={`w-16 h-16 md:w-24 md:h-24 bg-white/10 backdrop-blur-sm rounded-2xl flex items-center justify-center mb-2 transition-all duration-300 hover:bg-white/20 hover:scale-105 ${item.key === 'seconds' ? 'animate-heartbeat' : ''}`}
+                      style={{ animationDelay: `${i * 100}ms` }}
+                    >
+                      <span
+                        className={`text-3xl md:text-5xl font-display text-gold transition-all duration-300 ${item.key === 'seconds' && item.value !== prevSeconds ? 'animate-flip-in' : ''}`}
+                        key={`${item.key}-${item.value}`}
+                      >
+                        {item.value.toString().padStart(2, '0')}
+                      </span>
                     </div>
-                    <span className="text-xs md:text-sm text-white/60 uppercase tracking-wider">{item.label}</span>
+                    <span className="text-xs md:text-sm text-white/60 uppercase tracking-wider group-hover:text-gold transition-colors duration-300">{item.label}</span>
                   </div>
                 ))}
               </div>
-              <p className="mt-12 text-white/50">Stream link will be available when the service begins</p>
+
+              {/* Decorative separator */}
+              <div className="flex items-center justify-center gap-2 mt-12 mb-4">
+                <span className="h-px w-16 bg-white/20" />
+                <span className="text-gold animate-twinkle">✦</span>
+                <span className="h-px w-16 bg-white/20" />
+              </div>
+
+              <p className="text-white/50 hover:text-white/70 transition-colors duration-300">Stream link will be available when the service begins</p>
             </div>
           </AnimatedSection>
         ) : (
           // Stream Player
-          <AnimatedSection>
-            <div className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl">
-              <iframe
-                src={`https://www.youtube.com/embed/${STREAM_CONFIG.youtubeVideoId}?autoplay=0`}
-                className="absolute inset-0 w-full h-full"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              />
+          <AnimatedSection animation="zoom">
+            <div className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl group">
+              {/* Decorative frame */}
+              <div className="absolute -inset-1 bg-gradient-to-r from-gold via-white/20 to-gold rounded-2xl opacity-50 group-hover:opacity-100 transition-opacity duration-500 blur-sm" />
+              <div className="relative rounded-2xl overflow-hidden">
+                <iframe
+                  src={`https://www.youtube.com/embed/${STREAM_CONFIG.youtubeVideoId}?autoplay=0`}
+                  className="absolute inset-0 w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
             </div>
             {STREAM_CONFIG.hasEnded && (
               <p className="text-center text-white/70 mt-6">{t('stream.streamEnded')}</p>
@@ -1170,19 +1428,23 @@ const DonationSection = ({ showToast }) => {
   };
 
   const providers = [
-    { id: 'mtn', name: 'MTN Mobile Money', color: 'from-yellow-400 to-yellow-500', ...MOBILE_MONEY.mtn },
-    { id: 'vodafone', name: 'Vodafone Cash', color: 'from-red-500 to-red-600', ...MOBILE_MONEY.vodafone },
-    { id: 'airtel', name: 'AirtelTigo Money', color: 'from-blue-500 to-blue-600', ...MOBILE_MONEY.airtelTigo }
+    { id: 'mtn', name: 'MTN Mobile Money', color: 'from-yellow-400 to-yellow-500', icon: '📱', ...MOBILE_MONEY.mtn },
+    { id: 'vodafone', name: 'Vodafone Cash', color: 'from-red-500 to-red-600', icon: '💰', ...MOBILE_MONEY.vodafone },
+    { id: 'airtel', name: 'AirtelTigo Money', color: 'from-blue-500 to-blue-600', icon: '💳', ...MOBILE_MONEY.airtelTigo }
   ];
 
   return (
-    <section id="donate" className="py-24 md:py-32 bg-white relative">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="donate" className="py-24 md:py-32 bg-white relative overflow-hidden">
+      {/* Decorative background elements */}
+      <div className="absolute top-0 right-0 w-64 h-64 bg-gold/5 rounded-full -translate-y-1/2 translate-x-1/2 animate-pulse-soft" />
+      <div className="absolute bottom-0 left-0 w-48 h-48 bg-forest/5 rounded-full translate-y-1/2 -translate-x-1/2 animate-pulse-soft" style={{ animationDelay: '-3s' }} />
+
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative">
         <SectionHeading eyebrow={t('donate.eyebrow')} title={t('donate.title')} subtitle={t('donate.subtitle')} />
 
-        <AnimatedSection>
+        <AnimatedSection animation="zoom">
           <div className="text-center mb-12">
-            <span className="inline-block px-6 py-2 bg-gold/10 text-gold-dark rounded-full text-lg font-medium">
+            <span className="inline-block px-6 py-2 bg-gold/10 text-gold-dark rounded-full text-lg font-medium magnetic-hover transition-all duration-300 hover:bg-gold hover:text-white hover:shadow-gold-glow">
               {t('donate.mobileMoneyTitle')}
             </span>
           </div>
@@ -1190,19 +1452,31 @@ const DonationSection = ({ showToast }) => {
 
         <div className="grid md:grid-cols-3 gap-6">
           {providers.map((provider, index) => (
-            <AnimatedSection key={provider.id} delay={index * 100}>
-              <Card className="p-6 text-center">
-                <div className={`w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br ${provider.color} flex items-center justify-center text-white text-2xl font-bold mb-4`}>
-                  {provider.name.charAt(0)}
+            <AnimatedSection key={provider.id} delay={index * 150} animation={index === 1 ? 'fade-up' : index === 0 ? 'fade-right' : 'fade-left'}>
+              <Card className="p-6 text-center group" tilt>
+                <div className={`w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br ${provider.color} flex items-center justify-center text-white text-2xl font-bold mb-4 transition-all duration-500 group-hover:scale-110 group-hover:rotate-6 group-hover:shadow-lg`}>
+                  <span className="transition-transform duration-300 group-hover:scale-125">{provider.icon}</span>
                 </div>
-                <h4 className="font-medium text-charcoal mb-2">{provider.name}</h4>
-                <p className="text-2xl font-mono text-charcoal mb-1">{provider.number}</p>
+                <h4 className="font-medium text-charcoal mb-2 group-hover:text-gold-dark transition-colors duration-300">{provider.name}</h4>
+                <p className="text-2xl font-mono text-charcoal mb-1 transition-all duration-300 group-hover:tracking-wider">{provider.number}</p>
                 <p className="text-sm text-warm-gray mb-4">{t('donate.accountName')}: {provider.name}</p>
                 <button
                   onClick={() => copyToClipboard(provider.number, provider.id)}
-                  className={`w-full py-2 rounded-lg text-sm font-medium transition-colors ${copiedId === provider.id ? 'bg-forest text-white' : 'bg-gold/10 text-gold-dark hover:bg-gold hover:text-white'}`}
+                  className={`w-full py-2 rounded-lg text-sm font-medium transition-all duration-300 btn-press ${copiedId === provider.id ? 'bg-forest text-white scale-105' : 'bg-gold/10 text-gold-dark hover:bg-gold hover:text-white hover:scale-105'}`}
                 >
-                  {copiedId === provider.id ? t('donate.copied') : t('donate.copyNumber')}
+                  <span className="flex items-center justify-center gap-2">
+                    {copiedId === provider.id ? (
+                      <>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                        {t('donate.copied')}
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                        {t('donate.copyNumber')}
+                      </>
+                    )}
+                  </span>
                 </button>
               </Card>
             </AnimatedSection>
@@ -1321,24 +1595,73 @@ const ContactSection = ({ showToast }) => {
 
 const Footer = () => {
   const { t } = useLanguage();
+  const [footerRef, footerVisible] = useScrollReveal();
 
   return (
-    <footer className="bg-charcoal text-white py-16 relative overflow-hidden">
+    <footer className="bg-charcoal text-white py-16 relative overflow-hidden" ref={footerRef}>
       <KenteBorder className="absolute top-0 left-0 right-0 h-2" />
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <div className="mb-6"><span className="text-gold text-3xl">✦</span></div>
-        <h2 className="font-display text-3xl md:text-4xl text-white mb-2">Josephine Worla Ameovi</h2>
-        <p className="text-gold text-lg mb-2">"{t('hero.grandma')}"</p>
-        <p className="text-white/60 mb-8">July 15, 1948 — December 14, 2025</p>
+      {/* Animated background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] border border-gold/5 rounded-full animate-spin-slow" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] border border-gold/5 rounded-full animate-spin-slow" style={{ animationDirection: 'reverse', animationDuration: '40s' }} />
+      </div>
 
-        <div className="flex items-center justify-center gap-4 mb-8">
-          <span className="h-px w-16 bg-gold/40" />
-          <span className="text-gold">{t('footer.foreverInHearts')}</span>
-          <span className="h-px w-16 bg-gold/40" />
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative">
+        <div
+          className="mb-6 transition-all duration-700"
+          style={{ opacity: footerVisible ? 1 : 0, transform: footerVisible ? 'translateY(0) scale(1)' : 'translateY(20px) scale(0.8)' }}
+        >
+          <span className="text-gold text-3xl animate-twinkle inline-block">✦</span>
         </div>
 
-        <p className="text-white/40 text-sm">{t('footer.builtWithLove')}</p>
+        <h2
+          className="font-display text-3xl md:text-4xl text-white mb-2 transition-all duration-700"
+          style={{ opacity: footerVisible ? 1 : 0, transform: footerVisible ? 'translateY(0)' : 'translateY(20px)', transitionDelay: '100ms' }}
+        >
+          Josephine Worla Ameovi
+        </h2>
+
+        <p
+          className="text-gold text-lg mb-2 animate-gradient-text transition-all duration-700"
+          style={{ opacity: footerVisible ? 1 : 0, transform: footerVisible ? 'translateY(0)' : 'translateY(20px)', transitionDelay: '200ms' }}
+        >
+          "{t('hero.grandma')}"
+        </p>
+
+        <p
+          className="text-white/60 mb-8 transition-all duration-700"
+          style={{ opacity: footerVisible ? 1 : 0, transitionDelay: '300ms' }}
+        >
+          July 15, 1948 — December 14, 2025
+        </p>
+
+        <div
+          className="flex items-center justify-center gap-4 mb-8 transition-all duration-700"
+          style={{ opacity: footerVisible ? 1 : 0, transitionDelay: '400ms' }}
+        >
+          <span className="h-px w-16 bg-gold/40 transition-all duration-1000" style={{ width: footerVisible ? '4rem' : '0' }} />
+          <span className="text-gold hover:text-gold-light transition-colors duration-300 cursor-default">{t('footer.foreverInHearts')}</span>
+          <span className="h-px w-16 bg-gold/40 transition-all duration-1000" style={{ width: footerVisible ? '4rem' : '0' }} />
+        </div>
+
+        <p
+          className="text-white/40 text-sm hover:text-white/60 transition-all duration-500"
+          style={{ opacity: footerVisible ? 1 : 0, transitionDelay: '500ms' }}
+        >
+          {t('footer.builtWithLove')}
+        </p>
+
+        {/* Scroll to top button */}
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="mt-8 mx-auto w-10 h-10 rounded-full border border-gold/30 flex items-center justify-center text-gold/50 hover:text-gold hover:border-gold hover:bg-gold/10 transition-all duration-300 group"
+          style={{ opacity: footerVisible ? 1 : 0, transitionDelay: '600ms' }}
+        >
+          <svg className="w-5 h-5 transform transition-transform duration-300 group-hover:-translate-y-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+          </svg>
+        </button>
       </div>
     </footer>
   );
