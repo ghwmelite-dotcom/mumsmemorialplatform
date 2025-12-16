@@ -29,6 +29,9 @@ const MOBILE_MONEY = {
   airtelTigo: { number: '0XX XXX XXXX', name: 'Account Name Here' }
 };
 
+// Paystack configuration (TEST MODE)
+const PAYSTACK_PUBLIC_KEY = 'pk_test_9cdde18d25bee33638801838a5779d21f1e7e423';
+
 // Music playlist (add URLs to hymns/songs)
 const MUSIC_PLAYLIST = [
   { title: 'Amazing Grace', artist: 'Traditional Hymn', url: '' },
@@ -1417,8 +1420,13 @@ const TributesSection = ({ showToast }) => {
 // ============================================
 
 const DonationSection = ({ showToast }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [copiedId, setCopiedId] = useState(null);
+  const [showPaystack, setShowPaystack] = useState(false);
+  const [donorName, setDonorName] = useState('');
+  const [donorEmail, setDonorEmail] = useState('');
+  const [amount, setAmount] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const copyToClipboard = (text, id) => {
     navigator.clipboard.writeText(text.replace(/\s/g, ''));
@@ -1427,11 +1435,61 @@ const DonationSection = ({ showToast }) => {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
+  const handlePaystackPayment = (e) => {
+    e.preventDefault();
+    if (!donorEmail || !amount || !donorName) {
+      showToast(language === 'en' ? 'Please fill all fields' : 'Taflatse ŋlɔ nya siwo katã', 'error');
+      return;
+    }
+
+    const amountInPesewas = parseFloat(amount) * 100;
+    if (isNaN(amountInPesewas) || amountInPesewas < 100) {
+      showToast(language === 'en' ? 'Minimum amount is GHS 1' : 'Gã la nye GHS 1', 'error');
+      return;
+    }
+
+    setIsProcessing(true);
+
+    const handler = window.PaystackPop.setup({
+      key: PAYSTACK_PUBLIC_KEY,
+      email: donorEmail,
+      amount: amountInPesewas,
+      currency: 'GHS',
+      ref: 'memorial_' + Math.floor(Math.random() * 1000000000 + 1),
+      metadata: {
+        custom_fields: [
+          { display_name: 'Donor Name', variable_name: 'donor_name', value: donorName },
+          { display_name: 'Memorial', variable_name: 'memorial', value: 'Josephine Worla Ameovi' }
+        ]
+      },
+      callback: function(response) {
+        setIsProcessing(false);
+        showToast(
+          language === 'en'
+            ? `Thank you ${donorName}! Your donation of GHS ${amount} was successful.`
+            : `Akpe na wò ${donorName}! Woƒe kpekpeɖeŋu GHS ${amount} dze.`,
+          'success'
+        );
+        setDonorName('');
+        setDonorEmail('');
+        setAmount('');
+        setShowPaystack(false);
+      },
+      onClose: function() {
+        setIsProcessing(false);
+      }
+    });
+
+    handler.openIframe();
+  };
+
   const providers = [
     { id: 'mtn', name: 'MTN Mobile Money', color: 'from-yellow-400 to-yellow-500', icon: '📱', ...MOBILE_MONEY.mtn },
     { id: 'vodafone', name: 'Vodafone Cash', color: 'from-red-500 to-red-600', icon: '💰', ...MOBILE_MONEY.vodafone },
     { id: 'airtel', name: 'AirtelTigo Money', color: 'from-blue-500 to-blue-600', icon: '💳', ...MOBILE_MONEY.airtelTigo }
   ];
+
+  const presetAmounts = [50, 100, 200, 500];
 
   return (
     <section id="donate" className="py-24 md:py-32 bg-white relative overflow-hidden">
@@ -1442,8 +1500,121 @@ const DonationSection = ({ showToast }) => {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative">
         <SectionHeading eyebrow={t('donate.eyebrow')} title={t('donate.title')} subtitle={t('donate.subtitle')} />
 
+        {/* Online Donation Section */}
         <AnimatedSection animation="zoom">
-          <div className="text-center mb-12">
+          <div className="text-center mb-8">
+            <button
+              onClick={() => setShowPaystack(!showPaystack)}
+              className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-forest to-green-600 text-white rounded-2xl text-lg font-medium magnetic-hover transition-all duration-300 hover:shadow-lg hover:scale-105 btn-press"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+              </svg>
+              {language === 'en' ? 'Donate Online (Card/Mobile Money)' : 'Na Kpekpeɖeŋu Online'}
+            </button>
+            <p className="text-warm-gray text-sm mt-2">
+              {language === 'en' ? 'Secure payment via Paystack' : 'Ɖoɖo nyui to Paystack dzi'}
+            </p>
+          </div>
+        </AnimatedSection>
+
+        {/* Paystack Payment Form */}
+        {showPaystack && (
+          <AnimatedSection animation="zoom">
+            <Card className="max-w-md mx-auto p-6 mb-12">
+              <h3 className="font-display text-xl text-charcoal mb-4 text-center">
+                {language === 'en' ? 'Make a Donation' : 'Na Kpekpeɖeŋu'}
+              </h3>
+              <form onSubmit={handlePaystackPayment} className="space-y-4">
+                <div>
+                  <label className="block text-sm text-warm-gray mb-1">
+                    {language === 'en' ? 'Your Name' : 'Wò Ŋkɔ'}
+                  </label>
+                  <input
+                    type="text"
+                    value={donorName}
+                    onChange={(e) => setDonorName(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border border-warm-gray/30 focus:border-gold focus:outline-none transition-all duration-300 input-animated"
+                    placeholder={language === 'en' ? 'Enter your name' : 'Ŋlɔ wò ŋkɔ'}
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-warm-gray mb-1">
+                    {language === 'en' ? 'Email Address' : 'Email'}
+                  </label>
+                  <input
+                    type="email"
+                    value={donorEmail}
+                    onChange={(e) => setDonorEmail(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border border-warm-gray/30 focus:border-gold focus:outline-none transition-all duration-300 input-animated"
+                    placeholder="email@example.com"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm text-warm-gray mb-1">
+                    {language === 'en' ? 'Amount (GHS)' : 'Ga (GHS)'}
+                  </label>
+                  <input
+                    type="number"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border border-warm-gray/30 focus:border-gold focus:outline-none transition-all duration-300 input-animated text-2xl font-mono"
+                    placeholder="0.00"
+                    min="1"
+                    required
+                  />
+                  <div className="flex gap-2 mt-2">
+                    {presetAmounts.map((preset) => (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => setAmount(preset.toString())}
+                        className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all duration-300 ${amount === preset.toString() ? 'bg-gold text-white' : 'bg-gold/10 text-gold-dark hover:bg-gold/20'}`}
+                      >
+                        GHS {preset}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <Button type="submit" className="w-full" disabled={isProcessing}>
+                  {isProcessing ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      {language === 'en' ? 'Processing...' : 'Wòle dzadzra...'}
+                    </span>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                      {language === 'en' ? 'Donate Securely' : 'Na Kpekpeɖeŋu'}
+                    </>
+                  )}
+                </Button>
+              </form>
+              <p className="text-center text-xs text-warm-gray mt-4">
+                {language === 'en' ? 'Powered by Paystack - Safe & Secure' : 'Paystack - Ɖoɖo nyui'}
+              </p>
+            </Card>
+          </AnimatedSection>
+        )}
+
+        {/* Divider */}
+        <AnimatedSection delay={100}>
+          <div className="flex items-center justify-center gap-4 mb-8">
+            <span className="h-px w-20 bg-warm-gray/30" />
+            <span className="text-warm-gray text-sm">{language === 'en' ? 'or send via Mobile Money' : 'alo ɖo to Mobile Money dzi'}</span>
+            <span className="h-px w-20 bg-warm-gray/30" />
+          </div>
+        </AnimatedSection>
+
+        <AnimatedSection animation="zoom" delay={150}>
+          <div className="text-center mb-8">
             <span className="inline-block px-6 py-2 bg-gold/10 text-gold-dark rounded-full text-lg font-medium magnetic-hover transition-all duration-300 hover:bg-gold hover:text-white hover:shadow-gold-glow">
               {t('donate.mobileMoneyTitle')}
             </span>
@@ -1452,7 +1623,7 @@ const DonationSection = ({ showToast }) => {
 
         <div className="grid md:grid-cols-3 gap-6">
           {providers.map((provider, index) => (
-            <AnimatedSection key={provider.id} delay={index * 150} animation={index === 1 ? 'fade-up' : index === 0 ? 'fade-right' : 'fade-left'}>
+            <AnimatedSection key={provider.id} delay={200 + index * 150} animation={index === 1 ? 'fade-up' : index === 0 ? 'fade-right' : 'fade-left'}>
               <Card className="p-6 text-center group" tilt>
                 <div className={`w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br ${provider.color} flex items-center justify-center text-white text-2xl font-bold mb-4 transition-all duration-500 group-hover:scale-110 group-hover:rotate-6 group-hover:shadow-lg`}>
                   <span className="transition-transform duration-300 group-hover:scale-125">{provider.icon}</span>
