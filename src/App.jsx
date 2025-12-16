@@ -1,4 +1,94 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { addGuestbookEntry, getGuestbookEntries, addRSVP, addContactMessage } from './firebase';
+
+// ============================================
+// PAGE LOADER COMPONENT
+// ============================================
+
+const PageLoader = ({ onComplete }) => {
+  const [progress, setProgress] = useState(0);
+  const [phase, setPhase] = useState('loading'); // loading, revealing, complete
+
+  useEffect(() => {
+    // Simulate loading progress
+    const timer = setInterval(() => {
+      setProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(timer);
+          setPhase('revealing');
+          setTimeout(() => {
+            setPhase('complete');
+            setTimeout(onComplete, 500);
+          }, 800);
+          return 100;
+        }
+        return prev + Math.random() * 15 + 5;
+      });
+    }, 100);
+
+    return () => clearInterval(timer);
+  }, [onComplete]);
+
+  if (phase === 'complete') return null;
+
+  return (
+    <div className={`fixed inset-0 z-[100] flex items-center justify-center bg-cream transition-opacity duration-500 ${
+      phase === 'revealing' ? 'opacity-0' : 'opacity-100'
+    }`}>
+      {/* Background pattern */}
+      <div className="absolute inset-0 opacity-5">
+        <div className="absolute top-1/4 left-1/4 w-64 h-64 border border-gold rounded-full animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 w-48 h-48 border border-gold rounded-full animate-pulse" style={{ animationDelay: '0.5s' }} />
+      </div>
+
+      <div className="text-center relative z-10">
+        {/* Animated Kente-inspired logo */}
+        <div className="mb-8 relative">
+          <div className="w-24 h-24 mx-auto relative">
+            {/* Outer ring */}
+            <div className="absolute inset-0 rounded-full border-4 border-gold/30 animate-spin-slow" />
+            {/* Middle ring */}
+            <div className="absolute inset-2 rounded-full border-2 border-burgundy/40 animate-spin-slow" style={{ animationDirection: 'reverse' }} />
+            {/* Inner ring */}
+            <div className="absolute inset-4 rounded-full border-2 border-forest/40 animate-spin-slow" />
+            {/* Center */}
+            <div className="absolute inset-6 rounded-full bg-gradient-to-br from-gold to-gold-dark flex items-center justify-center">
+              <span className="text-white text-2xl">✦</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Text */}
+        <h2 className="font-display text-2xl text-charcoal mb-2 animate-pulse">
+          In Loving Memory
+        </h2>
+        <p className="text-warm-gray text-sm mb-8">
+          Josephine Worla Ameovi
+        </p>
+
+        {/* Progress bar */}
+        <div className="w-48 mx-auto">
+          <div className="h-1 bg-gold/20 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-gold to-gold-dark rounded-full transition-all duration-300 ease-out"
+              style={{ width: `${Math.min(progress, 100)}%` }}
+            />
+          </div>
+          <p className="text-xs text-warm-gray mt-2">{Math.min(Math.round(progress), 100)}%</p>
+        </div>
+
+        {/* Decorative elements */}
+        <div className="flex items-center justify-center gap-2 mt-8">
+          <span className="h-px w-8 bg-gold/40" />
+          <span className="w-1.5 h-1.5 rounded-full bg-gold animate-bounce" style={{ animationDelay: '0s' }} />
+          <span className="w-1.5 h-1.5 rounded-full bg-burgundy animate-bounce" style={{ animationDelay: '0.1s' }} />
+          <span className="w-1.5 h-1.5 rounded-full bg-forest animate-bounce" style={{ animationDelay: '0.2s' }} />
+          <span className="h-px w-8 bg-gold/40" />
+        </div>
+      </div>
+    </div>
+  );
+};
 
 // ============================================
 // ANIMATION HOOKS & UTILITIES
@@ -109,7 +199,6 @@ const SoftGradientOrbs = () => {
   );
 };
 
-// Elegant Kente-inspired border
 const KenteBorder = ({ className = '' }) => (
   <div className={`flex items-center justify-center gap-1 ${className}`}>
     {Array.from({ length: 30 }).map((_, i) => (
@@ -122,7 +211,6 @@ const KenteBorder = ({ className = '' }) => (
   </div>
 );
 
-// Decorative corner ornament
 const CornerOrnament = ({ position = 'top-left' }) => {
   const positions = {
     'top-left': 'top-0 left-0',
@@ -224,7 +312,7 @@ const Card = ({ children, className = '', hover = true, delay = 0 }) => {
   );
 };
 
-const Button = ({ children, variant = 'primary', className = '', onClick, disabled = false }) => {
+const Button = ({ children, variant = 'primary', className = '', onClick, disabled = false, type = 'button' }) => {
   const variants = {
     primary: 'bg-gradient-to-r from-gold to-gold-dark text-white hover:shadow-gold-glow',
     secondary: 'bg-white text-gold-dark border-2 border-gold hover:bg-gold hover:text-white',
@@ -233,6 +321,7 @@ const Button = ({ children, variant = 'primary', className = '', onClick, disabl
 
   return (
     <button
+      type={type}
       onClick={onClick}
       disabled={disabled}
       className={`px-8 py-3 rounded-full font-medium transition-all duration-300 ${variants[variant]} ${
@@ -241,6 +330,25 @@ const Button = ({ children, variant = 'primary', className = '', onClick, disabl
     >
       {children}
     </button>
+  );
+};
+
+// Toast notification component
+const Toast = ({ message, type = 'success', onClose }) => {
+  useEffect(() => {
+    const timer = setTimeout(onClose, 4000);
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  const bgColor = type === 'success' ? 'bg-forest' : type === 'error' ? 'bg-burgundy' : 'bg-gold-dark';
+
+  return (
+    <div className={`fixed bottom-6 right-6 z-50 ${bgColor} text-white px-6 py-4 rounded-xl shadow-elevated animate-slide-up flex items-center gap-3`}>
+      {type === 'success' && <span>✓</span>}
+      {type === 'error' && <span>✕</span>}
+      <span>{message}</span>
+      <button onClick={onClose} className="ml-2 opacity-70 hover:opacity-100">✕</button>
+    </div>
   );
 };
 
@@ -281,7 +389,6 @@ const Navigation = ({ activeSection, setActiveSection }) => {
             </span>
           </button>
 
-          {/* Desktop Menu */}
           <div className="hidden md:flex items-center gap-1">
             {navItems.map((item) => (
               <button
@@ -300,7 +407,6 @@ const Navigation = ({ activeSection, setActiveSection }) => {
             ))}
           </div>
 
-          {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className={`md:hidden p-2 rounded-lg transition-colors ${
@@ -317,7 +423,6 @@ const Navigation = ({ activeSection, setActiveSection }) => {
           </button>
         </div>
 
-        {/* Mobile Menu */}
         <div className={`md:hidden transition-all duration-300 overflow-hidden ${
           mobileMenuOpen ? 'max-h-96 pb-4' : 'max-h-0'
         }`}>
@@ -358,23 +463,15 @@ const HeroSection = () => {
 
   return (
     <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden">
-      {/* Beautiful gradient background */}
       <div className="absolute inset-0 bg-gradient-to-br from-charcoal via-charcoal-light to-burgundy-dark" />
-
-      {/* Soft overlay pattern */}
       <div className="absolute inset-0 opacity-10" style={{
         backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23D4AF37' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
       }} />
 
-      {/* Floating petals */}
       <FloatingPetals />
-
-      {/* Gradient orbs */}
       <SoftGradientOrbs />
 
-      {/* Content */}
       <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
-        {/* Decorative top element */}
         <div className={`mb-8 transition-all duration-1000 ${loaded ? 'opacity-100' : 'opacity-0'}`}>
           <div className="inline-flex items-center gap-3 text-gold">
             <span className="h-px w-8 bg-current" />
@@ -383,14 +480,10 @@ const HeroSection = () => {
           </div>
         </div>
 
-        {/* Photo */}
         <div className={`mb-10 transition-all duration-1000 delay-100 ${loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
           <div className="relative inline-block">
-            {/* Decorative ring */}
             <div className="absolute -inset-4 rounded-full border-2 border-gold/30 animate-spin-slow" />
             <div className="absolute -inset-8 rounded-full border border-gold/20" />
-
-            {/* Photo container */}
             <div className="relative w-40 h-40 md:w-52 md:h-52 rounded-full overflow-hidden border-4 border-gold shadow-2xl bg-gradient-to-br from-charcoal-light to-charcoal">
               <div className="w-full h-full flex items-center justify-center">
                 <div className="text-center text-white/40">
@@ -404,7 +497,6 @@ const HeroSection = () => {
           </div>
         </div>
 
-        {/* Dates */}
         <div className={`transition-all duration-1000 delay-200 ${loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
           <p className="text-gold font-medium tracking-[0.3em] uppercase text-sm mb-2">
             July 15, 1948 — December 14, 2025
@@ -412,21 +504,18 @@ const HeroSection = () => {
           <p className="text-white/60 text-sm mb-8">{calculateAge()} Years of Grace & Love</p>
         </div>
 
-        {/* Name */}
         <h1 className={`font-display text-5xl md:text-7xl lg:text-8xl text-white mb-6 transition-all duration-1000 delay-300 ${
           loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
         }`}>
           Josephine <span className="text-gold">Worla</span> Ameovi
         </h1>
 
-        {/* Nickname */}
         <p className={`text-2xl md:text-3xl text-gold-light font-display italic mb-8 transition-all duration-1000 delay-400 ${
           loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
         }`}>
           "Grandma"
         </p>
 
-        {/* Description */}
         <p className={`text-white/80 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed mb-12 transition-all duration-1000 delay-500 ${
           loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
         }`}>
@@ -434,14 +523,12 @@ const HeroSection = () => {
           Daughter of the Volta Region, whose wisdom and love knew no bounds.
         </p>
 
-        {/* CTA */}
         <div className={`transition-all duration-1000 delay-600 ${loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
           <Button variant="outline" onClick={() => document.getElementById('life').scrollIntoView({ behavior: 'smooth' })}>
             Celebrate Her Life
           </Button>
         </div>
 
-        {/* Scroll indicator */}
         <div className={`absolute bottom-8 left-1/2 -translate-x-1/2 transition-all duration-1000 delay-700 ${
           loaded ? 'opacity-100' : 'opacity-0'
         }`}>
@@ -453,7 +540,6 @@ const HeroSection = () => {
         </div>
       </div>
 
-      {/* Bottom Kente border */}
       <div className="absolute bottom-0 left-0 right-0">
         <KenteBorder className="h-3 bg-gradient-to-r from-transparent via-black/20 to-transparent py-1" />
       </div>
@@ -467,48 +553,21 @@ const HeroSection = () => {
 
 const LifeSection = () => {
   const milestones = [
-    {
-      year: '1948',
-      title: 'A Star is Born',
-      description: 'Josephine was born in the beautiful Volta Region of Ghana, surrounded by the rich traditions of the Ewe people.',
-      icon: '🌟'
-    },
-    {
-      year: 'Early Years',
-      title: 'Growing in Grace',
-      description: 'She grew up embracing her culture, learning the values of community, faith, and family that would guide her entire life.',
-      icon: '🌱'
-    },
-    {
-      year: 'Marriage',
-      title: 'Building a Family',
-      description: 'She became the cornerstone of her family, creating a home filled with love, warmth, and the aroma of delicious cooking.',
-      icon: '💑'
-    },
-    {
-      year: 'Legacy',
-      title: 'A Life of Service',
-      description: 'Known as "Grandma" to all who knew her, she touched countless lives through her kindness, wisdom, and generous spirit.',
-      icon: '👑'
-    }
+    { year: '1948', title: 'A Star is Born', description: 'Josephine was born in the beautiful Volta Region of Ghana, surrounded by the rich traditions of the Ewe people.', icon: '🌟' },
+    { year: 'Early Years', title: 'Growing in Grace', description: 'She grew up embracing her culture, learning the values of community, faith, and family that would guide her entire life.', icon: '🌱' },
+    { year: 'Marriage', title: 'Building a Family', description: 'She became the cornerstone of her family, creating a home filled with love, warmth, and the aroma of delicious cooking.', icon: '💑' },
+    { year: 'Legacy', title: 'A Life of Service', description: 'Known as "Grandma" to all who knew her, she touched countless lives through her kindness, wisdom, and generous spirit.', icon: '👑' }
   ];
 
   return (
     <section id="life" className="py-24 md:py-32 bg-cream relative overflow-hidden">
-      {/* Decorative elements */}
       <CornerOrnament position="top-left" />
       <CornerOrnament position="top-right" />
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-        <SectionHeading
-          eyebrow="Her Journey"
-          title="A Life Beautifully Lived"
-          subtitle="From the hills of Volta to the hearts of many, her story is one of love, strength, and enduring grace."
-        />
+        <SectionHeading eyebrow="Her Journey" title="A Life Beautifully Lived" subtitle="From the hills of Volta to the hearts of many, her story is one of love, strength, and enduring grace." />
 
-        {/* Timeline */}
         <div className="relative">
-          {/* Center line */}
           <div className="absolute left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-gold/0 via-gold/50 to-gold/0 hidden md:block" />
 
           <div className="space-y-12 md:space-y-0">
@@ -518,19 +577,14 @@ const LifeSection = () => {
                   <div className={`md:w-1/2 ${index % 2 === 0 ? 'md:text-right md:pr-12' : 'md:pl-12'}`}>
                     <Card className="p-6 md:p-8 inline-block">
                       <span className="text-4xl mb-4 block">{milestone.icon}</span>
-                      <span className="inline-block px-3 py-1 bg-gold/10 text-gold-dark rounded-full text-sm font-medium mb-3">
-                        {milestone.year}
-                      </span>
+                      <span className="inline-block px-3 py-1 bg-gold/10 text-gold-dark rounded-full text-sm font-medium mb-3">{milestone.year}</span>
                       <h3 className="font-display text-2xl text-charcoal mb-3">{milestone.title}</h3>
                       <p className="text-warm-gray leading-relaxed">{milestone.description}</p>
                     </Card>
                   </div>
-
-                  {/* Timeline dot */}
                   <div className="hidden md:flex items-center justify-center">
                     <div className="w-4 h-4 rounded-full bg-gold border-4 border-cream shadow-lg" />
                   </div>
-
                   <div className="md:w-1/2" />
                 </div>
               </AnimatedSection>
@@ -538,14 +592,11 @@ const LifeSection = () => {
           </div>
         </div>
 
-        {/* Quote */}
         <AnimatedSection delay={600}>
           <div className="mt-20 text-center">
             <div className="inline-block relative">
               <span className="absolute -top-6 -left-4 text-6xl text-gold/20 font-serif">"</span>
-              <p className="text-2xl md:text-3xl font-display text-charcoal italic px-8">
-                She lived not for herself, but for all those she loved.
-              </p>
+              <p className="text-2xl md:text-3xl font-display text-charcoal italic px-8">She lived not for herself, but for all those she loved.</p>
               <span className="absolute -bottom-8 -right-4 text-6xl text-gold/20 font-serif rotate-180">"</span>
             </div>
             <p className="text-warm-gray mt-8">— The Family</p>
@@ -562,7 +613,6 @@ const LifeSection = () => {
 
 const GallerySection = () => {
   const [selectedPhoto, setSelectedPhoto] = useState(null);
-
   const photos = [
     { id: 1, span: 'col-span-2 row-span-2', label: 'Featured Memory' },
     { id: 2, span: '', label: 'Memory' },
@@ -575,20 +625,12 @@ const GallerySection = () => {
   return (
     <section id="gallery" className="py-24 md:py-32 bg-white relative">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <SectionHeading
-          eyebrow="Photo Gallery"
-          title="Cherished Memories"
-          subtitle="A collection of moments that capture the joy, love, and warmth she brought to our lives."
-        />
+        <SectionHeading eyebrow="Photo Gallery" title="Cherished Memories" subtitle="A collection of moments that capture the joy, love, and warmth she brought to our lives." />
 
-        {/* Masonry-style grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
           {photos.map((photo, index) => (
             <AnimatedSection key={photo.id} delay={index * 100} className={photo.span}>
-              <div
-                onClick={() => setSelectedPhoto(photo)}
-                className="relative aspect-square bg-gradient-to-br from-cream to-warm-white rounded-2xl overflow-hidden cursor-pointer group shadow-soft hover:shadow-elevated transition-all duration-500"
-              >
+              <div onClick={() => setSelectedPhoto(photo)} className="relative aspect-square bg-gradient-to-br from-cream to-warm-white rounded-2xl overflow-hidden cursor-pointer group shadow-soft hover:shadow-elevated transition-all duration-500">
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="text-center text-charcoal/30 group-hover:text-gold/50 transition-colors">
                     <svg className="w-12 h-12 mx-auto mb-2 group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24">
@@ -597,11 +639,7 @@ const GallerySection = () => {
                     <span className="text-sm font-medium">{photo.label}</span>
                   </div>
                 </div>
-
-                {/* Hover overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-charcoal/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-
-                {/* Corner accents */}
                 <div className="absolute top-3 left-3 w-6 h-6 border-t-2 border-l-2 border-gold/0 group-hover:border-gold rounded-tl-lg transition-all duration-500" />
                 <div className="absolute bottom-3 right-3 w-6 h-6 border-b-2 border-r-2 border-gold/0 group-hover:border-gold rounded-br-lg transition-all duration-500" />
               </div>
@@ -610,18 +648,12 @@ const GallerySection = () => {
         </div>
 
         <AnimatedSection delay={700}>
-          <p className="text-center text-warm-gray mt-12">
-            More photos will be added. Family members can submit cherished memories.
-          </p>
+          <p className="text-center text-warm-gray mt-12">More photos will be added. Family members can submit cherished memories.</p>
         </AnimatedSection>
       </div>
 
-      {/* Lightbox */}
       {selectedPhoto && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-charcoal/90 backdrop-blur-lg animate-fade-in"
-          onClick={() => setSelectedPhoto(null)}
-        >
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-charcoal/90 backdrop-blur-lg animate-fade-in" onClick={() => setSelectedPhoto(null)}>
           <div className="relative max-w-4xl w-full bg-white rounded-3xl overflow-hidden shadow-2xl animate-scale-in">
             <div className="aspect-video bg-gradient-to-br from-cream to-warm-white flex items-center justify-center">
               <div className="text-center text-charcoal/40">
@@ -631,10 +663,7 @@ const GallerySection = () => {
                 <p className="text-lg">Photo coming soon</p>
               </div>
             </div>
-            <button
-              onClick={() => setSelectedPhoto(null)}
-              className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-charcoal text-white hover:bg-gold transition-colors"
-            >
+            <button onClick={() => setSelectedPhoto(null)} className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-charcoal text-white hover:bg-gold transition-colors">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -652,55 +681,21 @@ const GallerySection = () => {
 
 const FuneralSection = () => {
   const events = [
-    {
-      title: 'Laying in State',
-      time: 'To be announced',
-      location: 'Venue TBA',
-      dress: 'Traditional Kente or Black/Red',
-      icon: '🕯️',
-      color: 'from-gold/20 to-gold/5'
-    },
-    {
-      title: 'Funeral Service',
-      time: 'To be announced',
-      location: 'Venue TBA',
-      dress: 'Traditional attire',
-      icon: '⛪',
-      color: 'from-burgundy/20 to-burgundy/5'
-    },
-    {
-      title: 'Burial Ceremony',
-      time: 'After service',
-      location: 'Cemetery TBA',
-      dress: 'Traditional attire',
-      icon: '🌹',
-      color: 'from-forest/20 to-forest/5'
-    },
-    {
-      title: 'Reception',
-      time: 'After burial',
-      location: 'Venue TBA',
-      dress: 'Smart casual',
-      icon: '🎉',
-      color: 'from-gold/20 to-gold/5'
-    }
+    { title: 'Laying in State', time: 'To be announced', location: 'Venue TBA', dress: 'Traditional Kente or Black/Red', icon: '🕯️', color: 'from-gold/20 to-gold/5' },
+    { title: 'Funeral Service', time: 'To be announced', location: 'Venue TBA', dress: 'Traditional attire', icon: '⛪', color: 'from-burgundy/20 to-burgundy/5' },
+    { title: 'Burial Ceremony', time: 'After service', location: 'Cemetery TBA', dress: 'Traditional attire', icon: '🌹', color: 'from-forest/20 to-forest/5' },
+    { title: 'Reception', time: 'After burial', location: 'Venue TBA', dress: 'Smart casual', icon: '🎉', color: 'from-gold/20 to-gold/5' }
   ];
 
   return (
     <section id="funeral" className="py-24 md:py-32 bg-gradient-to-br from-charcoal via-charcoal to-charcoal-light text-white relative overflow-hidden">
-      {/* Background decoration */}
       <div className="absolute inset-0 opacity-5">
         <div className="absolute top-20 left-20 w-64 h-64 border border-white rounded-full" />
         <div className="absolute bottom-20 right-20 w-96 h-96 border border-white rounded-full" />
       </div>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-        <SectionHeading
-          eyebrow="Celebration of Life"
-          title="Funeral Service"
-          subtitle="Join us as we honor and celebrate the beautiful life of Grandma Josephine."
-          light
-        />
+        <SectionHeading eyebrow="Celebration of Life" title="Funeral Service" subtitle="Join us as we honor and celebrate the beautiful life of Grandma Josephine." light />
 
         <div className="grid md:grid-cols-2 gap-6">
           {events.map((event, index) => (
@@ -709,32 +704,21 @@ const FuneralSection = () => {
                 <span className="text-4xl mb-4 block group-hover:scale-110 transition-transform duration-300">{event.icon}</span>
                 <h3 className="font-display text-2xl text-white mb-4">{event.title}</h3>
                 <div className="space-y-2 text-white/80">
-                  <p className="flex items-center gap-2">
-                    <span className="text-gold">⏰</span> {event.time}
-                  </p>
-                  <p className="flex items-center gap-2">
-                    <span className="text-gold">📍</span> {event.location}
-                  </p>
-                  <p className="flex items-center gap-2">
-                    <span className="text-gold">👔</span> {event.dress}
-                  </p>
+                  <p className="flex items-center gap-2"><span className="text-gold">⏰</span> {event.time}</p>
+                  <p className="flex items-center gap-2"><span className="text-gold">📍</span> {event.location}</p>
+                  <p className="flex items-center gap-2"><span className="text-gold">👔</span> {event.dress}</p>
                 </div>
               </div>
             </AnimatedSection>
           ))}
         </div>
 
-        {/* RSVP */}
         <AnimatedSection delay={600}>
           <div className="mt-16 text-center">
             <div className="inline-block bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-8 md:p-12">
               <h4 className="font-display text-2xl text-white mb-4">Please Confirm Your Attendance</h4>
-              <p className="text-white/70 mb-8 max-w-md mx-auto">
-                Help us prepare adequately by letting us know if you'll be joining us.
-              </p>
-              <Button variant="outline" onClick={() => document.getElementById('contact').scrollIntoView({ behavior: 'smooth' })}>
-                RSVP Now
-              </Button>
+              <p className="text-white/70 mb-8 max-w-md mx-auto">Help us prepare adequately by letting us know if you'll be joining us.</p>
+              <Button variant="outline" onClick={() => document.getElementById('contact').scrollIntoView({ behavior: 'smooth' })}>RSVP Now</Button>
             </div>
           </div>
         </AnimatedSection>
@@ -744,33 +728,60 @@ const FuneralSection = () => {
 };
 
 // ============================================
-// GUESTBOOK SECTION
+// GUESTBOOK SECTION (with Firebase)
 // ============================================
 
-const GuestbookSection = () => {
+const GuestbookSection = ({ showToast }) => {
   const [entries, setEntries] = useState([
-    {
-      id: 1,
-      name: 'The Family',
-      location: 'Accra, Ghana',
-      message: 'We welcome all who knew and loved Grandma to share their memories here. Your words mean everything to us.',
-      date: 'December 2025'
-    }
+    { id: 'welcome', name: 'The Family', location: 'Accra, Ghana', message: 'We welcome all who knew and loved Grandma to share their memories here. Your words mean everything to us.', date: 'December 2025' }
   ]);
   const [formData, setFormData] = useState({ name: '', location: '', message: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleSubmit = (e) => {
+  useEffect(() => {
+    loadEntries();
+  }, []);
+
+  const loadEntries = async () => {
+    try {
+      const fetchedEntries = await getGuestbookEntries();
+      if (fetchedEntries.length > 0) {
+        setEntries([
+          { id: 'welcome', name: 'The Family', location: 'Accra, Ghana', message: 'We welcome all who knew and loved Grandma to share their memories here. Your words mean everything to us.', date: 'December 2025' },
+          ...fetchedEntries
+        ]);
+      }
+    } catch (error) {
+      console.error('Error loading entries:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    setTimeout(() => {
-      setEntries([{ id: Date.now(), ...formData, date: 'December 2025' }, ...entries]);
+
+    try {
+      const newEntry = await addGuestbookEntry({
+        name: formData.name,
+        location: formData.location || 'Unknown location',
+        message: formData.message
+      });
+
+      setEntries(prev => [
+        prev[0],
+        { ...newEntry, date: 'Just now' },
+        ...prev.slice(1)
+      ]);
       setFormData({ name: '', location: '', message: '' });
+      showToast('Your tribute has been added. Thank you for sharing!', 'success');
+    } catch (error) {
+      showToast('Failed to submit. Please try again.', 'error');
+    } finally {
       setIsSubmitting(false);
-      setSubmitted(true);
-      setTimeout(() => setSubmitted(false), 3000);
-    }, 1000);
+    }
   };
 
   return (
@@ -779,13 +790,8 @@ const GuestbookSection = () => {
       <CornerOrnament position="bottom-right" />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <SectionHeading
-          eyebrow="Share Your Memories"
-          title="Tributes & Messages"
-          subtitle="Leave a message of love, share a memory, or offer your condolences."
-        />
+        <SectionHeading eyebrow="Share Your Memories" title="Tributes & Messages" subtitle="Leave a message of love, share a memory, or offer your condolences." />
 
-        {/* Form */}
         <AnimatedSection>
           <Card className="p-6 md:p-8 mb-12">
             <h3 className="font-display text-xl text-charcoal mb-6 flex items-center gap-2">
@@ -795,65 +801,49 @@ const GuestbookSection = () => {
               <div className="grid md:grid-cols-2 gap-5">
                 <div>
                   <label className="block text-sm font-medium text-charcoal mb-2">Your Name *</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border-2 border-warm-gray/20 focus:border-gold focus:ring-0 outline-none transition-colors bg-cream/50"
-                    placeholder="Enter your name"
-                  />
+                  <input type="text" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-3 rounded-xl border-2 border-warm-gray/20 focus:border-gold focus:ring-0 outline-none transition-colors bg-cream/50" placeholder="Enter your name" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-charcoal mb-2">Location</label>
-                  <input
-                    type="text"
-                    value={formData.location}
-                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border-2 border-warm-gray/20 focus:border-gold focus:ring-0 outline-none transition-colors bg-cream/50"
-                    placeholder="City, Country"
-                  />
+                  <input type="text" value={formData.location} onChange={(e) => setFormData({ ...formData, location: e.target.value })} className="w-full px-4 py-3 rounded-xl border-2 border-warm-gray/20 focus:border-gold focus:ring-0 outline-none transition-colors bg-cream/50" placeholder="City, Country" />
                 </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-charcoal mb-2">Your Message *</label>
-                <textarea
-                  required
-                  rows={4}
-                  value={formData.message}
-                  onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-warm-gray/20 focus:border-gold focus:ring-0 outline-none transition-colors resize-none bg-cream/50"
-                  placeholder="Share a memory or leave a message..."
-                />
+                <textarea required rows={4} value={formData.message} onChange={(e) => setFormData({ ...formData, message: e.target.value })} className="w-full px-4 py-3 rounded-xl border-2 border-warm-gray/20 focus:border-gold focus:ring-0 outline-none transition-colors resize-none bg-cream/50" placeholder="Share a memory or leave a message..." />
               </div>
-              <Button disabled={isSubmitting}>
-                {isSubmitting ? 'Sending...' : submitted ? '✓ Message Sent!' : 'Submit Tribute'}
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Sending...' : 'Submit Tribute'}
               </Button>
             </form>
           </Card>
         </AnimatedSection>
 
-        {/* Entries */}
         <div className="space-y-6">
-          {entries.map((entry, index) => (
-            <AnimatedSection key={entry.id} delay={index * 100}>
-              <Card className="p-6 border-l-4 border-gold" hover={false}>
-                <p className="text-charcoal text-lg italic mb-4">"{entry.message}"</p>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gold to-gold-dark flex items-center justify-center text-white font-medium">
-                      {entry.name.charAt(0)}
+          {isLoading ? (
+            <div className="text-center py-8">
+              <div className="w-8 h-8 border-2 border-gold border-t-transparent rounded-full animate-spin mx-auto" />
+              <p className="text-warm-gray mt-4">Loading tributes...</p>
+            </div>
+          ) : (
+            entries.map((entry, index) => (
+              <AnimatedSection key={entry.id} delay={index * 100}>
+                <Card className="p-6 border-l-4 border-gold" hover={false}>
+                  <p className="text-charcoal text-lg italic mb-4">"{entry.message}"</p>
+                  <div className="flex items-center justify-between flex-wrap gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gold to-gold-dark flex items-center justify-center text-white font-medium">{entry.name.charAt(0)}</div>
+                      <div>
+                        <p className="font-medium text-charcoal">{entry.name}</p>
+                        {entry.location && <p className="text-sm text-warm-gray">{entry.location}</p>}
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium text-charcoal">{entry.name}</p>
-                      {entry.location && <p className="text-sm text-warm-gray">{entry.location}</p>}
-                    </div>
+                    <span className="text-sm text-warm-gray">{entry.date}</span>
                   </div>
-                  <span className="text-sm text-warm-gray">{entry.date}</span>
-                </div>
-              </Card>
-            </AnimatedSection>
-          ))}
+                </Card>
+              </AnimatedSection>
+            ))
+          )}
         </div>
       </div>
     </section>
@@ -861,40 +851,82 @@ const GuestbookSection = () => {
 };
 
 // ============================================
-// CONTACT SECTION
+// CONTACT SECTION (with Firebase)
 // ============================================
 
-const ContactSection = () => {
+const ContactSection = ({ showToast }) => {
+  const [formData, setFormData] = useState({ name: '', phone: '', message: '', attending: '', guests: '1' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formType, setFormType] = useState('message'); // 'message' or 'rsvp'
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      if (formType === 'rsvp') {
+        await addRSVP({
+          name: formData.name,
+          phone: formData.phone,
+          attending: formData.attending,
+          guests: parseInt(formData.guests) || 1,
+          message: formData.message
+        });
+        showToast('RSVP submitted successfully. Thank you!', 'success');
+      } else {
+        await addContactMessage({
+          name: formData.name,
+          phone: formData.phone,
+          message: formData.message
+        });
+        showToast('Message sent successfully!', 'success');
+      }
+      setFormData({ name: '', phone: '', message: '', attending: '', guests: '1' });
+    } catch (error) {
+      showToast('Failed to submit. Please try again.', 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <section id="contact" className="py-24 md:py-32 bg-white relative">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <SectionHeading
-          eyebrow="Get in Touch"
-          title="Contact the Family"
-          subtitle="For inquiries, RSVP, or to share your condolences."
-        />
+        <SectionHeading eyebrow="Get in Touch" title="Contact & RSVP" subtitle="For inquiries, RSVP, or to share your condolences." />
 
         <div className="grid md:grid-cols-2 gap-8">
           <AnimatedSection>
             <Card className="p-6 md:p-8 h-full">
-              <h3 className="font-display text-xl text-charcoal mb-6">Send a Message</h3>
-              <form className="space-y-4">
-                <input
-                  type="text"
-                  placeholder="Your Name"
-                  className="w-full px-4 py-3 rounded-xl border-2 border-warm-gray/20 focus:border-gold focus:ring-0 outline-none transition-colors"
-                />
-                <input
-                  type="tel"
-                  placeholder="Phone / WhatsApp"
-                  className="w-full px-4 py-3 rounded-xl border-2 border-warm-gray/20 focus:border-gold focus:ring-0 outline-none transition-colors"
-                />
-                <textarea
-                  rows={3}
-                  placeholder="Your Message"
-                  className="w-full px-4 py-3 rounded-xl border-2 border-warm-gray/20 focus:border-gold focus:ring-0 outline-none transition-colors resize-none"
-                />
-                <Button className="w-full">Send Message</Button>
+              {/* Form type toggle */}
+              <div className="flex gap-2 mb-6">
+                <button type="button" onClick={() => setFormType('message')} className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${formType === 'message' ? 'bg-gold text-white' : 'bg-cream text-charcoal hover:bg-gold/10'}`}>
+                  Send Message
+                </button>
+                <button type="button" onClick={() => setFormType('rsvp')} className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${formType === 'rsvp' ? 'bg-gold text-white' : 'bg-cream text-charcoal hover:bg-gold/10'}`}>
+                  RSVP
+                </button>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <input type="text" required placeholder="Your Name *" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full px-4 py-3 rounded-xl border-2 border-warm-gray/20 focus:border-gold focus:ring-0 outline-none transition-colors" />
+                <input type="tel" placeholder="Phone / WhatsApp" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} className="w-full px-4 py-3 rounded-xl border-2 border-warm-gray/20 focus:border-gold focus:ring-0 outline-none transition-colors" />
+
+                {formType === 'rsvp' && (
+                  <>
+                    <select value={formData.attending} onChange={(e) => setFormData({ ...formData, attending: e.target.value })} required className="w-full px-4 py-3 rounded-xl border-2 border-warm-gray/20 focus:border-gold focus:ring-0 outline-none transition-colors bg-white">
+                      <option value="">Will you attend? *</option>
+                      <option value="yes">Yes, I will attend</option>
+                      <option value="no">Sorry, I cannot attend</option>
+                      <option value="maybe">Not sure yet</option>
+                    </select>
+                    <input type="number" min="1" max="10" placeholder="Number of guests" value={formData.guests} onChange={(e) => setFormData({ ...formData, guests: e.target.value })} className="w-full px-4 py-3 rounded-xl border-2 border-warm-gray/20 focus:border-gold focus:ring-0 outline-none transition-colors" />
+                  </>
+                )}
+
+                <textarea rows={3} placeholder={formType === 'rsvp' ? 'Any special requirements or message' : 'Your Message'} value={formData.message} onChange={(e) => setFormData({ ...formData, message: e.target.value })} className="w-full px-4 py-3 rounded-xl border-2 border-warm-gray/20 focus:border-gold focus:ring-0 outline-none transition-colors resize-none" />
+                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                  {isSubmitting ? 'Sending...' : formType === 'rsvp' ? 'Submit RSVP' : 'Send Message'}
+                </Button>
               </form>
             </Card>
           </AnimatedSection>
@@ -915,12 +947,8 @@ const ContactSection = () => {
 
             <AnimatedSection delay={200}>
               <Card className="p-6 bg-gradient-to-br from-gold/10 to-gold/5 border border-gold/20" hover={false}>
-                <p className="text-charcoal text-lg italic font-display text-center">
-                  "Mía wò kpɔ́ fú o"
-                </p>
-                <p className="text-warm-gray text-sm text-center mt-2">
-                  (We will meet again) — Ewe proverb
-                </p>
+                <p className="text-charcoal text-lg italic font-display text-center">"Mía wò kpɔ́ fú o"</p>
+                <p className="text-warm-gray text-sm text-center mt-2">(We will meet again) — Ewe proverb</p>
               </Card>
             </AnimatedSection>
           </div>
@@ -940,12 +968,8 @@ const Footer = () => {
       <KenteBorder className="absolute top-0 left-0 right-0 h-2" />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <div className="mb-6">
-          <span className="text-gold text-3xl">✦</span>
-        </div>
-        <h2 className="font-display text-3xl md:text-4xl text-white mb-2">
-          Josephine Worla Ameovi
-        </h2>
+        <div className="mb-6"><span className="text-gold text-3xl">✦</span></div>
+        <h2 className="font-display text-3xl md:text-4xl text-white mb-2">Josephine Worla Ameovi</h2>
         <p className="text-gold text-lg mb-2">"Grandma"</p>
         <p className="text-white/60 mb-8">July 15, 1948 — December 14, 2025</p>
 
@@ -955,9 +979,7 @@ const Footer = () => {
           <span className="h-px w-16 bg-gold/40" />
         </div>
 
-        <p className="text-white/40 text-sm">
-          Built with love by the family
-        </p>
+        <p className="text-white/40 text-sm">Built with love by the family</p>
       </div>
     </footer>
   );
@@ -969,6 +991,16 @@ const Footer = () => {
 
 export default function App() {
   const [activeSection, setActiveSection] = useState('home');
+  const [isLoading, setIsLoading] = useState(true);
+  const [toast, setToast] = useState(null);
+
+  const showToast = useCallback((message, type = 'success') => {
+    setToast({ message, type });
+  }, []);
+
+  const hideToast = useCallback(() => {
+    setToast(null);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -996,15 +1028,21 @@ export default function App() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-cream text-charcoal antialiased">
-      <Navigation activeSection={activeSection} setActiveSection={scrollToSection} />
-      <HeroSection />
-      <LifeSection />
-      <GallerySection />
-      <FuneralSection />
-      <GuestbookSection />
-      <ContactSection />
-      <Footer />
-    </div>
+    <>
+      {isLoading && <PageLoader onComplete={() => setIsLoading(false)} />}
+
+      <div className={`min-h-screen bg-cream text-charcoal antialiased transition-opacity duration-500 ${isLoading ? 'opacity-0' : 'opacity-100'}`}>
+        <Navigation activeSection={activeSection} setActiveSection={scrollToSection} />
+        <HeroSection />
+        <LifeSection />
+        <GallerySection />
+        <FuneralSection />
+        <GuestbookSection showToast={showToast} />
+        <ContactSection showToast={showToast} />
+        <Footer />
+      </div>
+
+      {toast && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
+    </>
   );
 }

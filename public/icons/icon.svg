@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#E8C547"/>
+      <stop offset="50%" style="stop-color:#D4AF37"/>
+      <stop offset="100%" style="stop-color:#B8962D"/>
+    </linearGradient>
+    <linearGradient id="kenteGreen" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#1A5D1A"/>
+      <stop offset="100%" style="stop-color:#2D7A2D"/>
+    </linearGradient>
+    <linearGradient id="kenteBurgundy" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#8B1538"/>
+      <stop offset="100%" style="stop-color:#A31D47"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="240" fill="#FBF8F3"/>
+  <circle cx="256" cy="256" r="230" fill="none" stroke="url(#goldGradient)" stroke-width="8"/>
+
+  <!-- Kente-inspired border pattern -->
+  <g transform="translate(256,256)">
+    <!-- Inner decorative ring with Kente colors -->
+    <circle r="200" fill="none" stroke="url(#kenteGreen)" stroke-width="4" stroke-dasharray="20 10"/>
+    <circle r="190" fill="none" stroke="url(#kenteBurgundy)" stroke-width="3" stroke-dasharray="15 15" stroke-dashoffset="10"/>
+  </g>
+
+  <!-- Central dove symbol (peace, memorial) -->
+  <g transform="translate(256,240)">
+    <!-- Dove body -->
+    <path d="M0,-80 Q60,-60 40,0 Q30,40 0,60 Q-30,40 -40,0 Q-60,-60 0,-80"
+          fill="url(#goldGradient)" opacity="0.9"/>
+
+    <!-- Left wing -->
+    <path d="M-30,-20 Q-100,-60 -120,-20 Q-100,0 -40,10 Q-30,5 -30,-20"
+          fill="url(#goldGradient)"/>
+
+    <!-- Right wing -->
+    <path d="M30,-20 Q100,-60 120,-20 Q100,0 40,10 Q30,5 30,-20"
+          fill="url(#goldGradient)"/>
+
+    <!-- Olive branch -->
+    <path d="M-5,60 Q0,90 5,120" stroke="#1A5D1A" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <ellipse cx="-12" cy="85" rx="8" ry="5" fill="#1A5D1A" transform="rotate(-30,-12,85)"/>
+    <ellipse cx="12" cy="90" rx="8" ry="5" fill="#1A5D1A" transform="rotate(30,12,90)"/>
+    <ellipse cx="-8" cy="100" rx="7" ry="4" fill="#1A5D1A" transform="rotate(-20,-8,100)"/>
+    <ellipse cx="10" cy="105" rx="7" ry="4" fill="#1A5D1A" transform="rotate(25,10,105)"/>
+  </g>
+
+  <!-- Corner Adinkra-inspired accents -->
+  <g fill="url(#goldGradient)">
+    <!-- Top decorative elements -->
+    <circle cx="256" cy="50" r="8"/>
+    <circle cx="220" cy="60" r="5"/>
+    <circle cx="292" cy="60" r="5"/>
+
+    <!-- Bottom decorative elements -->
+    <circle cx="256" cy="462" r="8"/>
+    <circle cx="220" cy="452" r="5"/>
+    <circle cx="292" cy="452" r="5"/>
+  </g>
+</svg>
