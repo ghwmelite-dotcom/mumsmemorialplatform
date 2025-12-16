@@ -1,8 +1,0 @@
-# Cloudflare Pages Configuration
-name = "grandma-josephine-memorial"
-compatibility_date = "2024-01-01"
-pages_build_output_dir = "dist"
-
-# Custom headers for caching and security
-# [env.production.vars]
-# Add any environment variables here if needed
