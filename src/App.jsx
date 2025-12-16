@@ -44,15 +44,16 @@ const FAMILY_DATA = {
   matriarch: {
     name: 'Josephine Worla Ameovi',
     title: 'Grandma',
-    years: '1948 - 2025'
+    years: '1948 - 2025',
+    icon: '👑'
   },
   children: [
-    { id: 1, name: 'John Marion K. Hodges', relation: 'Son' },
-    { id: 2, name: 'Osborn M.D.K. Hodges', relation: 'Son' }
+    { id: 1, name: 'John Marion K. Hodges', relation: 'Son', icon: '👨' },
+    { id: 2, name: 'Osborn M.D.K. Hodges', relation: 'Son', icon: '👨' }
   ],
   grandchildren: [
-    { id: 1, name: 'Ria Hodges', parentId: 1 },
-    { id: 2, name: 'Gayle Hodges', parentId: 2 }
+    { id: 1, name: 'Ria Hodges', parentId: 1, icon: '👩' },
+    { id: 2, name: 'Gayle Hodges', parentId: 1, icon: '👩' }
   ]
 };
 
@@ -787,6 +788,11 @@ const FamilyTreeSection = () => {
   const [selectedMember, setSelectedMember] = useState(null);
   const [branchRef, branchVisible] = useScrollReveal();
 
+  // Get grandchildren for a specific parent
+  const getGrandchildrenForParent = (parentId) => {
+    return FAMILY_DATA.grandchildren.filter(gc => gc.parentId === parentId);
+  };
+
   return (
     <section id="family" className="py-24 md:py-32 bg-white relative overflow-hidden">
       {/* Decorative tree elements */}
@@ -807,7 +813,7 @@ const FamilyTreeSection = () => {
                 <div className="absolute inset-0 w-32 h-32 mx-auto rounded-full bg-gold/20 animate-glow-pulse blur-xl" />
                 <div className="relative w-32 h-32 mx-auto rounded-full bg-gradient-to-br from-gold to-gold-dark p-1 shadow-gold-glow group-hover:scale-110 transition-all duration-500">
                   <div className="w-full h-full rounded-full bg-cream flex items-center justify-center group-hover:bg-gold/10 transition-colors duration-300">
-                    <span className="text-4xl transition-transform duration-500 group-hover:scale-110">👑</span>
+                    <span className="text-4xl transition-transform duration-500 group-hover:scale-110">{FAMILY_DATA.matriarch.icon}</span>
                   </div>
                 </div>
                 <p className="mt-3 font-display text-xl text-charcoal group-hover:text-gold-dark transition-colors duration-300">{FAMILY_DATA.matriarch.name}</p>
@@ -816,72 +822,109 @@ const FamilyTreeSection = () => {
             </div>
           </AnimatedSection>
 
-          {/* Animated Connector Line */}
+          {/* Animated Connector Line from Matriarch */}
           <div className="w-px h-12 overflow-hidden">
             <div
-              className="w-full bg-gradient-to-b from-gold to-gold/30 transition-all duration-700 ease-out"
+              className="w-full bg-gradient-to-b from-gold to-burgundy/50 transition-all duration-700 ease-out"
               style={{ height: branchVisible ? '100%' : '0%', transitionDelay: '300ms' }}
             />
           </div>
 
-          {/* Children Row */}
-          <AnimatedSection delay={400}>
-            <div className="text-center mb-4">
+          {/* Children Label */}
+          <AnimatedSection delay={350}>
+            <div className="text-center mb-6">
               <span className="inline-block px-4 py-1 bg-burgundy/10 text-burgundy rounded-full text-sm font-medium magnetic-hover">{t('family.children')}</span>
-            </div>
-            <div className="flex flex-wrap justify-center gap-8 mb-8">
-              {FAMILY_DATA.children.map((child, index) => (
-                <button
-                  key={child.id}
-                  onClick={() => setSelectedMember(child)}
-                  className="group text-center"
-                  style={{ animationDelay: `${index * 100}ms` }}
-                >
-                  <div className="relative">
-                    <div className="absolute inset-0 w-20 h-20 mx-auto rounded-full bg-burgundy/20 scale-0 group-hover:scale-150 transition-transform duration-500 opacity-50" />
-                    <div className="relative w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-burgundy to-burgundy-dark p-0.5 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
-                      <div className="w-full h-full rounded-full bg-cream flex items-center justify-center group-hover:bg-burgundy/10 transition-colors duration-300">
-                        <span className="text-2xl transition-transform duration-300 group-hover:scale-125">👤</span>
-                      </div>
-                    </div>
-                  </div>
-                  <p className="mt-2 text-sm font-medium text-charcoal group-hover:text-burgundy transition-colors duration-300">{child.name}</p>
-                </button>
-              ))}
             </div>
           </AnimatedSection>
 
-          {/* Animated Connector Line */}
-          <div className="w-px h-8 overflow-hidden">
-            <div
-              className="w-full bg-gradient-to-b from-burgundy/30 to-forest/30 transition-all duration-700 ease-out"
-              style={{ height: branchVisible ? '100%' : '0%', transitionDelay: '600ms' }}
-            />
-          </div>
+          {/* Children Row with Grandchildren Branches */}
+          <AnimatedSection delay={400}>
+            <div className="flex flex-wrap justify-center gap-16 md:gap-24">
+              {FAMILY_DATA.children.map((child, index) => {
+                const childGrandchildren = getGrandchildrenForParent(child.id);
+                const hasGrandchildren = childGrandchildren.length > 0;
 
-          {/* Grandchildren Row */}
-          <AnimatedSection delay={700}>
-            <div className="text-center mb-4">
-              <span className="inline-block px-4 py-1 bg-forest/10 text-forest rounded-full text-sm font-medium magnetic-hover">{t('family.grandchildren')}</span>
-            </div>
-            <div className="flex flex-wrap justify-center gap-4">
-              {FAMILY_DATA.grandchildren.map((grandchild, index) => (
-                <button
-                  key={grandchild.id}
-                  onClick={() => setSelectedMember(grandchild)}
-                  className="group text-center"
-                  style={{ animationDelay: `${index * 50}ms` }}
-                >
-                  <div className="relative">
-                    <div className="w-14 h-14 mx-auto rounded-full bg-gradient-to-br from-forest to-forest p-0.5 group-hover:scale-125 group-hover:-rotate-6 transition-all duration-500">
-                      <div className="w-full h-full rounded-full bg-cream flex items-center justify-center group-hover:bg-forest/10 transition-colors duration-300">
-                        <span className="text-lg transition-transform duration-300 group-hover:scale-110">👤</span>
+                return (
+                  <div key={child.id} className="flex flex-col items-center">
+                    {/* Child */}
+                    <button
+                      onClick={() => setSelectedMember(child)}
+                      className="group text-center"
+                      style={{ animationDelay: `${index * 100}ms` }}
+                    >
+                      <div className="relative">
+                        <div className="absolute inset-0 w-20 h-20 mx-auto rounded-full bg-burgundy/20 scale-0 group-hover:scale-150 transition-transform duration-500 opacity-50" />
+                        <div className="relative w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-burgundy to-burgundy-dark p-0.5 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+                          <div className="w-full h-full rounded-full bg-cream flex items-center justify-center group-hover:bg-burgundy/10 transition-colors duration-300">
+                            <span className="text-2xl transition-transform duration-300 group-hover:scale-125">{child.icon}</span>
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                      <p className="mt-2 text-sm font-medium text-charcoal group-hover:text-burgundy transition-colors duration-300 max-w-[120px]">{child.name}</p>
+                    </button>
+
+                    {/* Connector and Grandchildren under this child */}
+                    {hasGrandchildren && (
+                      <>
+                        {/* Vertical connector from child */}
+                        <div className="w-px h-8 overflow-hidden mt-4">
+                          <div
+                            className="w-full bg-gradient-to-b from-burgundy/30 to-forest/50 transition-all duration-700 ease-out"
+                            style={{ height: branchVisible ? '100%' : '0%', transitionDelay: `${600 + index * 100}ms` }}
+                          />
+                        </div>
+
+                        {/* Horizontal connector bar */}
+                        {childGrandchildren.length > 1 && (
+                          <div className="h-px overflow-hidden" style={{ width: `${(childGrandchildren.length - 1) * 80 + 40}px` }}>
+                            <div
+                              className="h-full bg-forest/40 transition-all duration-700 ease-out"
+                              style={{ width: branchVisible ? '100%' : '0%', transitionDelay: `${700 + index * 100}ms` }}
+                            />
+                          </div>
+                        )}
+
+                        {/* Grandchildren */}
+                        <div className="flex gap-6 mt-2">
+                          {childGrandchildren.map((grandchild, gcIndex) => (
+                            <div key={grandchild.id} className="flex flex-col items-center">
+                              {/* Small vertical connector to each grandchild */}
+                              <div className="w-px h-4 overflow-hidden">
+                                <div
+                                  className="w-full bg-forest/40 transition-all duration-500 ease-out"
+                                  style={{ height: branchVisible ? '100%' : '0%', transitionDelay: `${800 + gcIndex * 50}ms` }}
+                                />
+                              </div>
+                              <button
+                                onClick={() => setSelectedMember(grandchild)}
+                                className="group text-center"
+                                style={{ animationDelay: `${gcIndex * 50}ms` }}
+                              >
+                                <div className="relative">
+                                  <div className="absolute inset-0 w-14 h-14 mx-auto rounded-full bg-pink-200/30 scale-0 group-hover:scale-150 transition-transform duration-500 opacity-50" />
+                                  <div className="w-14 h-14 mx-auto rounded-full bg-gradient-to-br from-pink-400 to-pink-500 p-0.5 group-hover:scale-125 group-hover:-rotate-6 transition-all duration-500 shadow-md">
+                                    <div className="w-full h-full rounded-full bg-cream flex items-center justify-center group-hover:bg-pink-50 transition-colors duration-300">
+                                      <span className="text-xl transition-transform duration-300 group-hover:scale-110">{grandchild.icon}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                                <p className="mt-2 text-xs font-medium text-charcoal group-hover:text-pink-500 transition-colors duration-300">{grandchild.name}</p>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
                   </div>
-                  <p className="mt-1 text-xs font-medium text-charcoal group-hover:text-forest transition-colors duration-300">{grandchild.name}</p>
-                </button>
-              ))}
+                );
+              })}
+            </div>
+          </AnimatedSection>
+
+          {/* Grandchildren Label */}
+          <AnimatedSection delay={900}>
+            <div className="text-center mt-8">
+              <span className="inline-block px-4 py-1 bg-pink-100 text-pink-600 rounded-full text-sm font-medium magnetic-hover">{t('family.grandchildren')}</span>
             </div>
           </AnimatedSection>
         </div>
@@ -892,7 +935,7 @@ const FamilyTreeSection = () => {
             <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl animate-scale-in text-center" onClick={e => e.stopPropagation()}>
               <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-gold to-gold-dark p-1 mb-4 animate-glow-pulse">
                 <div className="w-full h-full rounded-full bg-cream flex items-center justify-center">
-                  <span className="text-4xl">👤</span>
+                  <span className="text-4xl">{selectedMember.icon || '👤'}</span>
                 </div>
               </div>
               <h3 className="font-display text-2xl text-charcoal mb-2">{selectedMember.name}</h3>
