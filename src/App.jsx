@@ -33,9 +33,9 @@ const MOBILE_MONEY = {
 const PAYSTACK_PUBLIC_KEY = 'pk_test_9cdde18d25bee33638801838a5779d21f1e7e423';
 
 // Music playlist (add URLs to hymns/songs)
-// Using GitHub raw URL as Cloudflare Pages doesn't serve large static files correctly
+// Audio hosted on Cloudinary for reliable cross-origin playback
 const MUSIC_PLAYLIST = [
-  { title: 'A Faithful Life Remembered Through Music', artist: 'Memorial Hymns Collection (12 Tracks)', url: 'https://raw.githubusercontent.com/ghwmelite-dotcom/mumsmemorialplatform/main/public/audio/memorial-hymns.mp3' }
+  { title: 'A Faithful Life Remembered Through Music', artist: 'Memorial Hymns Collection (12 Tracks)', url: 'https://res.cloudinary.com/db967oq9r/video/upload/v1766007005/k96tzpjq8audsvde0rov.mp3' }
 ];
 
 // Family tree data
@@ -409,10 +409,11 @@ const AmbientMusicPlayer = () => {
       <audio
         ref={audioRef}
         src={currentTrack.url}
-        preload="auto"
+        preload="metadata"
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
         onEnded={() => setIsPlaying(false)}
+        onError={(e) => console.error('Audio error:', e.target.error)}
       />
       <div className="music-player-mini rounded-2xl shadow-2xl border border-gold/20 overflow-hidden">
         {/* Mini View */}
