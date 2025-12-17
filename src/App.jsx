@@ -1116,9 +1116,9 @@ const PhotoTimelineSection = () => {
 // Formspree endpoint for candles (backup/notification)
 const FORMSPREE_CANDLES = 'https://formspree.io/f/xwpkgjkq';
 
-// JSONBlob for TRUE global candle storage - visible to ALL visitors on ANY device
-const JSONBLOB_ID = '019b2c8e-e7a6-786d-b902-1712058e6bb2';
-const JSONBLOB_URL = `https://jsonblob.com/api/jsonBlob/${JSONBLOB_ID}`;
+// ExtendsClass JSON Storage - TRUE global storage visible to ALL visitors on ANY device
+// This service is CORS-friendly and works from any domain
+const CANDLES_STORAGE_URL = 'https://extendsclass.com/api/json-storage/bin/bcccddc';
 
 // Animated Candle Component - Now with dynamic sizing
 const AnimatedCandle = ({ candle, index, isNew, size = 'normal' }) => {
@@ -1243,23 +1243,22 @@ const CandleLightingSection = ({ showToast }) => {
     return 'grid-cols-8 sm:grid-cols-12 md:grid-cols-16';
   };
 
-  // Fetch candles from JSONBlob - TRUE global storage visible to ALL visitors
+  // Fetch candles from ExtendsClass - TRUE global storage visible to ALL visitors on ANY device
   useEffect(() => {
     const fetchGlobalCandles = async () => {
       try {
-        const response = await fetch(JSONBLOB_URL, {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' }
-        });
+        const response = await fetch(CANDLES_STORAGE_URL);
 
         if (response.ok) {
           const data = await response.json();
           if (data.candles && Array.isArray(data.candles)) {
             setCandles(data.candles);
+            // Cache locally as backup
+            localStorage.setItem('memorial-candles-cache', JSON.stringify(data.candles));
           }
         }
       } catch (error) {
-        console.log('Failed to fetch global candles:', error);
+        console.log('Failed to fetch global candles, using cache:', error);
         // Fallback to localStorage cache
         const cached = localStorage.getItem('memorial-candles-cache');
         if (cached) {
@@ -1272,17 +1271,10 @@ const CandleLightingSection = ({ showToast }) => {
 
     fetchGlobalCandles();
 
-    // Poll for updates every 15 seconds to see new candles from other visitors
-    const pollInterval = setInterval(fetchGlobalCandles, 15000);
+    // Poll for updates every 10 seconds to see new candles from other visitors
+    const pollInterval = setInterval(fetchGlobalCandles, 10000);
     return () => clearInterval(pollInterval);
   }, []);
-
-  // Cache candles locally as backup
-  useEffect(() => {
-    if (candles.length > 0) {
-      localStorage.setItem('memorial-candles-cache', JSON.stringify(candles));
-    }
-  }, [candles]);
 
   const lightCandle = async (e) => {
     e.preventDefault();
@@ -1301,12 +1293,16 @@ const CandleLightingSection = ({ showToast }) => {
     const updatedCandles = [newCandle, ...candles];
 
     try {
-      // Save to JSONBlob for GLOBAL persistence - ALL visitors will see this
-      await fetch(JSONBLOB_URL, {
+      // Save to ExtendsClass for GLOBAL persistence - ALL visitors will see this
+      const response = await fetch(CANDLES_STORAGE_URL, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ candles: updatedCandles })
       });
+
+      if (!response.ok) {
+        throw new Error('Failed to save');
+      }
 
       // Also submit to Formspree for email notification
       fetch(FORMSPREE_CANDLES, {
@@ -1320,7 +1316,7 @@ const CandleLightingSection = ({ showToast }) => {
       }).catch(() => {});
 
     } catch (error) {
-      console.log('Failed to save globally, but updating UI');
+      console.log('Failed to save globally:', error);
     }
 
     // Update UI with animation
