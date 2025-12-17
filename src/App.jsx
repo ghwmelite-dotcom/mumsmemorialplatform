@@ -645,11 +645,26 @@ const HeroSection = () => {
           </div>
         </div>
 
-        <div className={`mb-10 transition-all duration-1000 delay-100 ${loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+        <div className={`mt-8 mb-10 transition-all duration-1000 delay-100 ${loaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
           <div className="relative inline-block">
-            <div className="absolute -inset-4 rounded-full border-2 border-gold/30 animate-spin-slow" />
-            <div className="absolute -inset-8 rounded-full border border-gold/20" />
-            <div className="relative w-40 h-40 md:w-52 md:h-52 rounded-full overflow-hidden border-4 border-gold shadow-2xl">
+            {/* Outer pulsing ring */}
+            <div className="absolute -inset-12 rounded-full border border-gold/10 animate-ping" style={{ animationDuration: '3s' }} />
+            {/* Third ring - slow reverse spin with glow */}
+            <div className="absolute -inset-10 rounded-full border border-gold/20 animate-spin-slow" style={{ animationDirection: 'reverse', animationDuration: '25s' }}>
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2 h-2 bg-gold rounded-full shadow-gold-glow" />
+            </div>
+            {/* Second ring - breathing effect */}
+            <div className="absolute -inset-6 rounded-full border-2 border-gold/30 animate-pulse" style={{ animationDuration: '2s' }}>
+              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-gold/60 rounded-full" />
+              <div className="absolute top-1/2 right-0 -translate-y-1/2 w-1.5 h-1.5 bg-gold/60 rounded-full" />
+            </div>
+            {/* Inner ring - elegant spin with orbiting dots */}
+            <div className="absolute -inset-3 rounded-full border-2 border-gold/40 animate-spin-slow" style={{ animationDuration: '15s' }}>
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-gradient-to-br from-gold to-gold-dark rounded-full shadow-lg" />
+              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-gold/50 rounded-full" />
+            </div>
+            {/* Main photo container */}
+            <div className="relative w-40 h-40 md:w-52 md:h-52 rounded-full overflow-hidden border-4 border-gold shadow-2xl shadow-gold/20">
               <img
                 src="/photos/hero-2017.jpeg"
                 alt="Josephine Worla Ameovi at Retiree Staff Meeting 2017"
