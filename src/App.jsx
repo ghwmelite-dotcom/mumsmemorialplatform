@@ -384,19 +384,31 @@ const AmbientMusicPlayer = () => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const [showUnmutePrompt, setShowUnmutePrompt] = useState(true);
-  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
+  // Start with a random track
+  const [currentTrackIndex, setCurrentTrackIndex] = useState(() =>
+    Math.floor(Math.random() * MUSIC_PLAYLIST.length)
+  );
 
   if (!MUSIC_PLAYLIST || MUSIC_PLAYLIST.length === 0) return null;
 
   const currentTrack = MUSIC_PLAYLIST[currentTrackIndex];
   const youtubeUrl = `https://www.youtube.com/embed/${currentTrack.id}?autoplay=1&loop=1&list=${MUSIC_CONFIG.playlistId}&mute=${isMuted ? 1 : 0}&enablejsapi=1`;
 
+  // Shuffle to a random different track
+  const shuffleTrack = () => {
+    let newIndex;
+    do {
+      newIndex = Math.floor(Math.random() * MUSIC_PLAYLIST.length);
+    } while (newIndex === currentTrackIndex && MUSIC_PLAYLIST.length > 1);
+    setCurrentTrackIndex(newIndex);
+  };
+
   const nextTrack = () => {
-    setCurrentTrackIndex((prev) => (prev + 1) % MUSIC_PLAYLIST.length);
+    shuffleTrack();
   };
 
   const prevTrack = () => {
-    setCurrentTrackIndex((prev) => (prev - 1 + MUSIC_PLAYLIST.length) % MUSIC_PLAYLIST.length);
+    shuffleTrack();
   };
 
   return (
@@ -513,24 +525,15 @@ const AmbientMusicPlayer = () => {
                 />
               </div>
 
-              {/* Track Navigation */}
-              <div className="flex items-center justify-between mt-2 px-1">
+              {/* Shuffle Control */}
+              <div className="flex items-center justify-center mt-2 px-1">
                 <button
-                  onClick={prevTrack}
-                  className="w-7 h-7 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-colors"
-                  title="Previous track"
+                  onClick={shuffleTrack}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-colors"
+                  title="Shuffle to random track"
                 >
-                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
-                </button>
-                <span className="text-white/50 text-[10px]">
-                  {currentTrackIndex + 1} / {MUSIC_PLAYLIST.length}
-                </span>
-                <button
-                  onClick={nextTrack}
-                  className="w-7 h-7 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-colors"
-                  title="Next track"
-                >
-                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg>
+                  <span className="text-[10px]">Shuffle ({currentTrackIndex + 1}/{MUSIC_PLAYLIST.length})</span>
                 </button>
               </div>
             </div>
