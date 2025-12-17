@@ -1117,8 +1117,8 @@ const PhotoTimelineSection = () => {
 const FORMSPREE_CANDLES = 'https://formspree.io/f/xwpkgjkq';
 
 // ExtendsClass JSON Storage - TRUE global storage visible to ALL visitors on ANY device
-// This service is CORS-friendly and works from any domain
-const CANDLES_STORAGE_URL = 'https://extendsclass.com/api/json-storage/bin/bcccddc';
+const CANDLES_STORAGE_URL = 'https://extendsclass.com/api/json-storage/bin/ffabdac';
+const CANDLES_SECURITY_KEY = 'memorial2025';
 
 // Animated Candle Component - Now with dynamic sizing
 const AnimatedCandle = ({ candle, index, isNew, size = 'normal' }) => {
@@ -1296,7 +1296,10 @@ const CandleLightingSection = ({ showToast }) => {
       // Save to ExtendsClass for GLOBAL persistence - ALL visitors will see this
       const response = await fetch(CANDLES_STORAGE_URL, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Security-key': CANDLES_SECURITY_KEY
+        },
         body: JSON.stringify({ candles: updatedCandles })
       });
 
