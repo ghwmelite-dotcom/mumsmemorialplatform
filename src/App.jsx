@@ -649,15 +649,12 @@ const HeroSection = () => {
           <div className="relative inline-block">
             <div className="absolute -inset-4 rounded-full border-2 border-gold/30 animate-spin-slow" />
             <div className="absolute -inset-8 rounded-full border border-gold/20" />
-            <div className="relative w-40 h-40 md:w-52 md:h-52 rounded-full overflow-hidden border-4 border-gold shadow-2xl bg-gradient-to-br from-charcoal-light to-charcoal">
-              <div className="w-full h-full flex items-center justify-center">
-                <div className="text-center text-white/40">
-                  <svg className="w-16 h-16 mx-auto mb-2" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                  </svg>
-                  <span className="text-xs">Photo</span>
-                </div>
-              </div>
+            <div className="relative w-40 h-40 md:w-52 md:h-52 rounded-full overflow-hidden border-4 border-gold shadow-2xl">
+              <img
+                src="/photos/hero-2017.jpeg"
+                alt="Josephine Worla Ameovi at Retiree Staff Meeting 2017"
+                className="w-full h-full object-cover object-center"
+              />
             </div>
           </div>
         </div>
@@ -963,10 +960,40 @@ const PhotoTimelineSection = () => {
   const [timelineRef, timelineVisible] = useScrollReveal();
 
   const decades = [
-    { period: '1940s-50s', photos: [{ id: 1, label: 'Childhood' }] },
-    { period: '1960s-70s', photos: [{ id: 2, label: 'Young Adult' }, { id: 3, label: 'Wedding' }] },
-    { period: '1980s-90s', photos: [{ id: 4, label: 'Family Life' }, { id: 5, label: 'Celebrations' }] },
-    { period: '2000s-2020s', photos: [{ id: 6, label: 'Grandchildren' }, { id: 7, label: 'Golden Years' }] }
+    {
+      period: '1970s',
+      photos: [
+        { id: 1, src: '/photos/barclays-1971.jpeg', label: 'At Barclays, Kimberly Ave', year: '1971', story: 'Beginning her career at Barclays Bank, Kimberly Avenue branch.' },
+        { id: 2, src: '/photos/labadi-1975.jpeg', label: 'Labadi Estate', year: '1975', story: 'A cherished moment at Labadi Estate.' },
+        { id: 3, src: '/photos/portrait-1976.jpeg', label: 'Portrait', year: 'Nov 1976', story: 'A beautiful portrait capturing her grace.' },
+        { id: 4, src: '/photos/wedding-1970s.jpeg', label: 'At a Wedding', year: '1970s', story: 'Celebrating love at a wedding ceremony.' }
+      ]
+    },
+    {
+      period: '1977-79',
+      photos: [
+        { id: 5, src: '/photos/pregnant-john-1977.jpeg', label: '6 Months with John', year: '1977', story: 'Expecting her first son, John Marion.' },
+        { id: 6, src: '/photos/portrait-1979.jpeg', label: 'Portrait', year: '1979', story: 'Radiant beauty captured in this portrait.' }
+      ]
+    },
+    {
+      period: '1980s',
+      photos: [
+        { id: 7, src: '/photos/labadi-1981.jpeg', label: 'Labadi Estate', year: '1981', story: 'A wonderful day at Labadi Estate.' },
+        { id: 8, src: '/photos/pregnant-oz.jpeg', label: '5 Months with Oz', year: '1980s', story: 'Expecting her second son, Osborn.' },
+        { id: 9, src: '/photos/with-baby-oz-1985.jpeg', label: 'With Baby Oz', year: '1985', story: 'Precious moments with baby Osborn.' }
+      ]
+    },
+    {
+      period: '2000s-2020s',
+      photos: [
+        { id: 10, src: '/photos/with-john-2010.jpeg', label: 'With John', year: '2010', story: 'A loving moment with her son John.' },
+        { id: 11, src: '/photos/with-ozzy-2010.jpeg', label: 'With Ozzy', year: '2010', story: 'A treasured moment with her son Osborn.' },
+        { id: 12, src: '/photos/cultural-day-barclays.jpeg', label: 'Cultural Day at Barclays', year: '2000s', story: 'Celebrating Ghanaian culture at Barclays Bank.' },
+        { id: 13, src: '/photos/long-service-award.jpeg', label: 'Long Service Award', year: '2000s', story: 'Recognized for her years of dedicated service.' },
+        { id: 14, src: '/photos/portrait-2023.jpeg', label: 'Golden Years', year: '2023', story: 'A beautiful portrait in her golden years.' }
+      ]
+    }
   ];
 
   return (
@@ -1004,22 +1031,21 @@ const PhotoTimelineSection = () => {
                       className="relative aspect-square bg-gradient-to-br from-white to-warm-white rounded-2xl overflow-hidden cursor-pointer group shadow-soft hover:shadow-elevated transition-all duration-500 photo-hover"
                       style={{ transitionDelay: `${photoIndex * 100}ms` }}
                     >
-                      {/* Shimmer overlay */}
-                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                        <div className="absolute inset-0 animate-shimmer" />
-                      </div>
+                      {/* Actual photo */}
+                      <img
+                        src={photo.src}
+                        alt={photo.label}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                      />
 
-                      <div className="absolute inset-0 flex items-center justify-center transition-transform duration-700 group-hover:scale-110">
-                        <div className="text-center text-charcoal/30 group-hover:text-gold transition-colors duration-300">
-                          <svg className="w-10 h-10 mx-auto mb-2 transform transition-all duration-500 group-hover:scale-125 group-hover:rotate-12" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
-                          </svg>
-                          <span className="text-sm font-medium block transform transition-all duration-300 group-hover:translate-y-1">{photo.label}</span>
-                        </div>
-                      </div>
+                      {/* Gradient overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-charcoal/80 via-charcoal/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500" />
 
-                      {/* Gradient overlay on hover */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-charcoal/70 via-charcoal/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500" />
+                      {/* Label overlay */}
+                      <div className="absolute bottom-0 left-0 right-0 p-3 text-white transform translate-y-full group-hover:translate-y-0 transition-transform duration-500">
+                        <p className="text-sm font-medium">{photo.label}</p>
+                        <p className="text-xs text-gold">{photo.year}</p>
+                      </div>
 
                       {/* Corner decorations on hover */}
                       <div className="absolute top-2 left-2 w-6 h-6 border-l-2 border-t-2 border-gold opacity-0 group-hover:opacity-100 transition-all duration-500 transform -translate-x-2 -translate-y-2 group-hover:translate-x-0 group-hover:translate-y-0" />
@@ -1039,17 +1065,24 @@ const PhotoTimelineSection = () => {
 
       {selectedPhoto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-charcoal/90 backdrop-blur-lg animate-fade-in" onClick={() => setSelectedPhoto(null)}>
-          <div className="relative max-w-4xl w-full bg-white rounded-3xl overflow-hidden shadow-2xl animate-scale-in">
-            <div className="aspect-video bg-gradient-to-br from-cream to-warm-white flex items-center justify-center">
-              <div className="text-center text-charcoal/40">
-                <svg className="w-20 h-20 mx-auto mb-4 animate-pulse-soft" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
-                </svg>
-                <p className="text-lg font-display">{selectedPhoto.label}</p>
-                <p className="text-sm mt-2">Photo coming soon</p>
-              </div>
+          <div className="relative max-w-4xl w-full bg-white rounded-3xl overflow-hidden shadow-2xl animate-scale-in" onClick={(e) => e.stopPropagation()}>
+            <div className="relative">
+              <img
+                src={selectedPhoto.src}
+                alt={selectedPhoto.label}
+                className="w-full max-h-[70vh] object-contain bg-charcoal"
+              />
             </div>
-            <button onClick={() => setSelectedPhoto(null)} className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-charcoal text-white hover:bg-gold hover:rotate-90 transition-all duration-300">
+            <div className="p-6 bg-gradient-to-b from-white to-cream">
+              <div className="flex items-center gap-3 mb-3">
+                <span className="inline-block px-3 py-1 bg-gold text-white rounded-full text-sm font-medium">
+                  {selectedPhoto.year}
+                </span>
+                <h3 className="text-xl font-display text-charcoal">{selectedPhoto.label}</h3>
+              </div>
+              <p className="text-warm-gray leading-relaxed">{selectedPhoto.story}</p>
+            </div>
+            <button onClick={() => setSelectedPhoto(null)} className="absolute top-4 right-4 w-10 h-10 flex items-center justify-center rounded-full bg-white/90 text-charcoal hover:bg-gold hover:text-white hover:rotate-90 transition-all duration-300 shadow-lg">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
