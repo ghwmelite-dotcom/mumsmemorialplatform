@@ -33,10 +33,9 @@ const MOBILE_MONEY = {
 const PAYSTACK_PUBLIC_KEY = 'pk_test_9cdde18d25bee33638801838a5779d21f1e7e423';
 
 // Music playlist (add URLs to hymns/songs)
-// To add songs: 1) Put MP3 files in public/audio/ folder
-//               2) Update the url paths below (e.g., '/audio/song-name.mp3')
+// Using GitHub raw URL as Cloudflare Pages doesn't serve large static files correctly
 const MUSIC_PLAYLIST = [
-  { title: 'A Faithful Life Remembered Through Music', artist: 'Memorial Hymns Collection (12 Tracks)', url: '/audio/memorial-hymns.mp3' }
+  { title: 'A Faithful Life Remembered Through Music', artist: 'Memorial Hymns Collection (12 Tracks)', url: 'https://raw.githubusercontent.com/ghwmelite-dotcom/mumsmemorialplatform/main/public/audio/memorial-hymns.mp3' }
 ];
 
 // Family tree data
