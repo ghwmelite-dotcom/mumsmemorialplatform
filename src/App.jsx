@@ -35,6 +35,9 @@ const PAYSTACK_PUBLIC_KEY = 'pk_test_9cdde18d25bee33638801838a5779d21f1e7e423';
 // AI Tribute Writer API (Cloudflare Worker with Claude)
 const TRIBUTE_AI_URL = 'https://memorial-tribute-ai.ghwmelite.workers.dev';
 
+// Guestbook API (Cloudflare Worker with KV storage)
+const GUESTBOOK_API_URL = 'https://memorial-guestbook-api.ghwmelite.workers.dev';
+
 // Music configuration - YouTube video IDs for hymns
 const MUSIC_PLAYLIST = [
   { id: 'H23l-y-jdac', title: 'Memorial Hymns', artist: 'Sacred Collection' },
@@ -2755,38 +2758,69 @@ const AITributeWriterModal = ({ isOpen, onClose, onUseTribute, userName }) => {
 // ============================================
 
 const TributesSection = ({ showToast }) => {
-  const { t } = useLanguage();
-  const [entries, setEntries] = useState([
-    { id: 'welcome', name: 'The Family', location: 'Accra, Ghana', message: 'We welcome all who knew and loved Grandma to share their memories here. Your words mean everything to us.', date: 'December 2025' }
-  ]);
+  const { t, language } = useLanguage();
+  const [entries, setEntries] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [formData, setFormData] = useState({ name: '', location: '', message: '' });
   const [showAIWriter, setShowAIWriter] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [displayCount, setDisplayCount] = useState(6);
   const [mediaTributes, setMediaTributes] = useState(() => {
     const saved = localStorage.getItem('memorial-media-tributes');
     return saved ? JSON.parse(saved) : [];
   });
+
+  // Fetch entries from API on mount
+  useEffect(() => {
+    const fetchEntries = async () => {
+      try {
+        const response = await fetch(GUESTBOOK_API_URL);
+        if (response.ok) {
+          const data = await response.json();
+          setEntries(data.entries || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch guestbook entries:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchEntries();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(FORMSPREE_GUESTBOOK, {
+      // Save to global API
+      const apiResponse = await fetch(GUESTBOOK_API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: formData.name,
           location: formData.location || 'Not specified',
-          message: formData.message,
-          _subject: `New Guestbook Entry from ${formData.name}`
+          message: formData.message
         })
       });
 
-      if (response.ok) {
-        setEntries(prev => [prev[0], { id: Date.now(), name: formData.name, location: formData.location || 'Not specified', message: formData.message, date: 'Just now' }, ...prev.slice(1)]);
+      if (apiResponse.ok) {
+        const data = await apiResponse.json();
+        setEntries(data.entries || []);
         setFormData({ name: '', location: '', message: '' });
         showToast(t('tributes.successMessage'), 'success');
+
+        // Also send to Formspree for email notification
+        fetch(FORMSPREE_GUESTBOOK, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: formData.name,
+            location: formData.location || 'Not specified',
+            message: formData.message,
+            _subject: `New Guestbook Entry from ${formData.name}`
+          })
+        }).catch(() => {});
       } else {
         throw new Error('Submission failed');
       }
@@ -2796,6 +2830,13 @@ const TributesSection = ({ showToast }) => {
       setIsSubmitting(false);
     }
   };
+
+  const loadMore = () => {
+    setDisplayCount(prev => prev + 6);
+  };
+
+  const displayedEntries = entries.slice(0, displayCount);
+  const hasMore = entries.length > displayCount;
 
   const openCloudinaryWidget = () => {
     if (typeof window.cloudinary === 'undefined') {
@@ -2937,58 +2978,103 @@ const TributesSection = ({ showToast }) => {
           userName={formData.name}
         />
 
-        {/* Entries List - Animated Guestbook Signatures */}
-        <div className="space-y-6">
-          {entries.map((entry, index) => (
-            <AnimatedSection key={entry.id} delay={index * 100}>
-              <Card className="p-6 border-l-4 border-gold relative overflow-hidden group" hover={false}>
-                {/* Decorative corner flourish */}
-                <div className="absolute top-0 right-0 w-16 h-16 opacity-0 group-hover:opacity-100 transition-all duration-500">
-                  <svg className="w-full h-full text-gold/20" viewBox="0 0 100 100">
-                    <path d="M100 0 Q60 40 100 100" fill="none" stroke="currentColor" strokeWidth="2" className="animate-draw-path" style={{ strokeDasharray: 200, strokeDashoffset: 200 }} />
-                  </svg>
-                </div>
+        {/* Entries Count */}
+        {!isLoading && entries.length > 0 && (
+          <div className="text-center mb-8">
+            <span className="inline-flex items-center gap-2 px-4 py-2 bg-gold/10 rounded-full text-gold-dark text-sm font-medium">
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+              </svg>
+              {entries.length} {language === 'en' ? 'tributes shared' : 'akpɔkplɔwo'}
+            </span>
+          </div>
+        )}
 
-                {/* Message with typewriter effect container */}
-                <div className="relative">
-                  <span className="absolute -left-2 -top-2 text-4xl text-gold/20 font-serif">"</span>
-                  <p className="text-charcoal text-lg italic mb-4 pl-4 pr-6">{entry.message}</p>
-                  <span className="absolute -right-1 bottom-2 text-4xl text-gold/20 font-serif rotate-180">"</span>
-                </div>
+        {/* Loading State */}
+        {isLoading && (
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="w-12 h-12 border-4 border-gold/30 border-t-gold rounded-full animate-spin mb-4" />
+            <p className="text-warm-gray">{language === 'en' ? 'Loading tributes...' : 'Akpɔkplɔwo le dzadzram...'}</p>
+          </div>
+        )}
 
-                {/* Signature area with animated underline */}
-                <div className="flex items-center justify-between flex-wrap gap-4 pt-4 border-t border-gold/10">
-                  <div className="flex items-center gap-3">
-                    {/* Animated avatar with pulse */}
-                    <div className="relative">
-                      <div className="absolute inset-0 rounded-full bg-gold/30 animate-ping opacity-0 group-hover:opacity-100" style={{ animationDuration: '2s' }} />
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gold to-gold-dark flex items-center justify-center text-white font-medium shadow-gold-glow transition-transform duration-300 group-hover:scale-110">
-                        {entry.name.charAt(0)}
+        {/* Entries List - Responsive Masonry-style Grid */}
+        {!isLoading && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            {displayedEntries.map((entry, index) => (
+              <AnimatedSection key={entry.id} delay={Math.min(index * 50, 300)}>
+                <Card className={`p-4 sm:p-6 border-l-4 border-gold relative overflow-hidden group h-full ${entry.id === 'welcome' ? 'md:col-span-2 bg-gradient-to-br from-cream to-gold/5' : ''}`} hover={false}>
+                  {/* Decorative corner flourish */}
+                  <div className="absolute top-0 right-0 w-12 h-12 sm:w-16 sm:h-16 opacity-0 group-hover:opacity-100 transition-all duration-500">
+                    <svg className="w-full h-full text-gold/20" viewBox="0 0 100 100">
+                      <path d="M100 0 Q60 40 100 100" fill="none" stroke="currentColor" strokeWidth="2" />
+                    </svg>
+                  </div>
+
+                  {/* Message */}
+                  <div className="relative mb-4">
+                    <span className="absolute -left-1 -top-1 text-2xl sm:text-3xl text-gold/20 font-serif">"</span>
+                    <p className="text-charcoal text-sm sm:text-base italic pl-4 pr-4 leading-relaxed line-clamp-6 group-hover:line-clamp-none transition-all">
+                      {entry.message}
+                    </p>
+                    <span className="absolute -right-1 bottom-0 text-2xl sm:text-3xl text-gold/20 font-serif rotate-180">"</span>
+                  </div>
+
+                  {/* Signature area */}
+                  <div className="flex items-center justify-between flex-wrap gap-2 sm:gap-4 pt-3 sm:pt-4 border-t border-gold/10">
+                    <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                      {/* Avatar */}
+                      <div className="relative flex-shrink-0">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-gold to-gold-dark flex items-center justify-center text-white text-sm sm:text-base font-medium shadow-gold-glow transition-transform duration-300 group-hover:scale-110">
+                          {entry.name.charAt(0).toUpperCase()}
+                        </div>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-display text-sm sm:text-base text-charcoal group-hover:text-gold transition-colors duration-300 truncate">
+                          {entry.name}
+                        </p>
+                        {entry.location && entry.location !== 'Not specified' && (
+                          <p className="text-xs sm:text-sm text-warm-gray flex items-center gap-1 truncate">
+                            <span className="inline-block w-1 h-1 rounded-full bg-gold flex-shrink-0" />
+                            <span className="truncate">{entry.location}</span>
+                          </p>
+                        )}
                       </div>
                     </div>
-                    <div>
-                      {/* Animated signature-style name */}
-                      <p className="font-display text-lg text-charcoal group-hover:text-gold transition-colors duration-300 relative">
-                        {entry.name}
-                        <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gold transition-all duration-500 group-hover:w-full" />
-                      </p>
-                      {entry.location && (
-                        <p className="text-sm text-warm-gray flex items-center gap-1">
-                          <span className="inline-block w-1 h-1 rounded-full bg-gold" />
-                          {entry.location}
-                        </p>
-                      )}
-                    </div>
+                    <span className="text-xs sm:text-sm text-warm-gray italic flex-shrink-0">{entry.date}</span>
                   </div>
-                  <span className="text-sm text-warm-gray italic">{entry.date}</span>
-                </div>
+                </Card>
+              </AnimatedSection>
+            ))}
+          </div>
+        )}
 
-                {/* Subtle paper texture effect on hover */}
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-5 transition-opacity duration-500 pointer-events-none" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")' }} />
-              </Card>
-            </AnimatedSection>
-          ))}
-        </div>
+        {/* Load More Button */}
+        {!isLoading && hasMore && (
+          <div className="text-center mt-8">
+            <button
+              onClick={loadMore}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-white border-2 border-gold text-gold-dark rounded-full font-medium hover:bg-gold hover:text-white transition-all duration-300 shadow-sm hover:shadow-md"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+              {language === 'en' ? `View More (${entries.length - displayCount} remaining)` : `Kpɔ bubuwo (${entries.length - displayCount})`}
+            </button>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!isLoading && entries.length === 0 && (
+          <div className="text-center py-12">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gold/10 flex items-center justify-center">
+              <svg className="w-8 h-8 text-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+              </svg>
+            </div>
+            <p className="text-warm-gray">{language === 'en' ? 'Be the first to share a tribute!' : 'Nye ame gbãtɔ si ana akpɔkplɔ!'}</p>
+          </div>
+        )}
       </div>
     </section>
   );
