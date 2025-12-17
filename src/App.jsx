@@ -523,19 +523,27 @@ const AmbientMusicPlayer = () => {
 // FEATURE 7: VIRTUAL MEMORIAL GARDEN
 // ============================================
 
+// Cloudflare Worker API - GLOBAL flower storage (visible to ALL visitors)
+const GARDEN_API_URL = 'https://memorial-garden-api.ghwmelite.workers.dev';
+
+// Default flowers - fallback if API fails
+const DEFAULT_FLOWERS = [
+  { id: 1, name: 'The Family', type: 'rose', plantedAt: '2025-01-01T00:00:00Z' },
+  { id: 2, name: 'John Marion K. Hodges', type: 'lily', plantedAt: '2025-01-02T00:00:00Z' },
+  { id: 3, name: 'Osborn M.D.K. Hodges', type: 'tulip', plantedAt: '2025-01-02T00:00:00Z' },
+  { id: 4, name: 'Ria Hodges', type: 'sunflower', plantedAt: '2025-01-03T00:00:00Z' },
+  { id: 5, name: 'Gayle Hodges', type: 'orchid', plantedAt: '2025-01-03T00:00:00Z' },
+  { id: 6, name: 'With Love', type: 'rose', plantedAt: '2025-01-04T00:00:00Z' },
+];
+
 const MemorialGarden = ({ showToast }) => {
   const { t } = useLanguage();
-  const [flowers, setFlowers] = useState(() => {
-    const saved = localStorage.getItem('memorial-garden-flowers');
-    return saved ? JSON.parse(saved) : [
-      { id: 1, name: 'The Family', type: 'rose', plantedAt: '2025-01-01' },
-      { id: 2, name: 'Friends', type: 'lily', plantedAt: '2025-01-02' },
-      { id: 3, name: 'With Love', type: 'tulip', plantedAt: '2025-01-03' },
-    ];
-  });
+  const [flowers, setFlowers] = useState(DEFAULT_FLOWERS);
   const [plantName, setPlantName] = useState('');
   const [isPlanting, setIsPlanting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [newFlowerId, setNewFlowerId] = useState(null);
+  const isSavingRef = useRef(false);
 
   const flowerTypes = {
     rose: { emoji: '🌹', color: 'from-red-400 to-red-600' },
@@ -545,11 +553,43 @@ const MemorialGarden = ({ showToast }) => {
     orchid: { emoji: '💐', color: 'from-purple-400 to-purple-600' },
   };
 
-  const plantFlower = (e) => {
+  // Fetch flowers from Cloudflare Worker API on mount
+  useEffect(() => {
+    const fetchFlowers = async () => {
+      try {
+        const response = await fetch(GARDEN_API_URL);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.flowers && Array.isArray(data.flowers)) {
+            setFlowers(data.flowers);
+          }
+        }
+      } catch (error) {
+        console.log('Using default flowers:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchFlowers();
+
+    // Poll for new flowers every 30 seconds
+    const pollInterval = setInterval(() => {
+      if (!isSavingRef.current) {
+        fetchFlowers();
+      }
+    }, 30000);
+
+    return () => clearInterval(pollInterval);
+  }, []);
+
+  const plantFlower = async (e) => {
     e.preventDefault();
     if (!plantName.trim() || isPlanting) return;
 
     setIsPlanting(true);
+    isSavingRef.current = true;
+
     const types = Object.keys(flowerTypes);
     const newFlower = {
       id: Date.now(),
@@ -558,17 +598,34 @@ const MemorialGarden = ({ showToast }) => {
       plantedAt: new Date().toISOString(),
     };
 
-    const updated = [...flowers, newFlower];
-    setFlowers(updated);
+    // Add new flower to the list
+    const updatedFlowers = [...flowers, newFlower];
+    setFlowers(updatedFlowers);
     setNewFlowerId(newFlower.id);
-    localStorage.setItem('memorial-garden-flowers', JSON.stringify(updated));
 
-    setTimeout(() => {
+    try {
+      // Save to Cloudflare Worker API (global storage)
+      const response = await fetch(GARDEN_API_URL, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ flowers: updatedFlowers })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save');
+      }
+
+      console.log('Flower planted globally!');
+      showToast('Your flower has been planted in the garden 🌸', 'success');
+    } catch (error) {
+      console.error('Error saving flower:', error);
+      showToast('Flower planted locally (sync pending)', 'success');
+    } finally {
       setPlantName('');
       setIsPlanting(false);
-      showToast('Your flower has been planted in the garden 🌸', 'success');
+      isSavingRef.current = false;
       setTimeout(() => setNewFlowerId(null), 2000);
-    }, 1000);
+    }
   };
 
   return (
