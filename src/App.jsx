@@ -1779,10 +1779,19 @@ const ContactSection = ({ showToast }) => {
                 <h4 className="font-medium text-charcoal mb-4 flex items-center gap-2">
                   <span className="text-gold">📞</span> {t('contact.familyContacts')}
                 </h4>
-                <div className="space-y-2 text-warm-gray">
-                  <p>[Primary Contact Number]</p>
-                  <p>[Secondary Contact Number]</p>
-                  <p>[Family Email]</p>
+                <div className="space-y-3 text-warm-gray">
+                  <a href="tel:+233540125882" className="flex items-center gap-3 hover:text-gold transition-colors duration-300 group">
+                    <span className="w-8 h-8 rounded-full bg-gold/10 flex items-center justify-center group-hover:bg-gold/20 transition-colors">📱</span>
+                    <span>0540 125 882</span>
+                  </a>
+                  <a href="tel:+233505982361" className="flex items-center gap-3 hover:text-gold transition-colors duration-300 group">
+                    <span className="w-8 h-8 rounded-full bg-gold/10 flex items-center justify-center group-hover:bg-gold/20 transition-colors">📱</span>
+                    <span>0505 982 361</span>
+                  </a>
+                  <a href="mailto:support@josephineameovi.com" className="flex items-center gap-3 hover:text-gold transition-colors duration-300 group">
+                    <span className="w-8 h-8 rounded-full bg-gold/10 flex items-center justify-center group-hover:bg-gold/20 transition-colors">✉️</span>
+                    <span>support@josephineameovi.com</span>
+                  </a>
                 </div>
               </Card>
             </AnimatedSection>
