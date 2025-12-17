@@ -33,6 +33,28 @@
     overflow-x: hidden;
   }
 
+  /* Image protection - prevent downloading/copying */
+  img {
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -o-user-select: none;
+    user-select: none;
+    pointer-events: none;
+    -webkit-user-drag: none;
+    -khtml-user-drag: none;
+    -moz-user-drag: none;
+    -o-user-drag: none;
+    user-drag: none;
+  }
+
+  /* Re-enable pointer events for interactive elements */
+  img.interactive,
+  button img,
+  a img {
+    pointer-events: auto;
+  }
+
   /* Elegant scrollbar */
   ::-webkit-scrollbar {
     width: 8px;

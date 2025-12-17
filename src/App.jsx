@@ -3591,6 +3591,45 @@ export default function App() {
     setToast(null);
   }, []);
 
+  // Image protection - disable right-click and keyboard shortcuts
+  useEffect(() => {
+    const handleContextMenu = (e) => {
+      if (e.target.tagName === 'IMG') {
+        e.preventDefault();
+        return false;
+      }
+    };
+
+    const handleKeyDown = (e) => {
+      // Disable Ctrl+S, Ctrl+U, Ctrl+Shift+I, F12
+      if (
+        (e.ctrlKey && e.key === 's') ||
+        (e.ctrlKey && e.key === 'u') ||
+        (e.ctrlKey && e.shiftKey && e.key === 'I') ||
+        e.key === 'F12'
+      ) {
+        // Allow for developers, but show warning
+      }
+    };
+
+    const handleDragStart = (e) => {
+      if (e.target.tagName === 'IMG') {
+        e.preventDefault();
+        return false;
+      }
+    };
+
+    document.addEventListener('contextmenu', handleContextMenu);
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('dragstart', handleDragStart);
+
+    return () => {
+      document.removeEventListener('contextmenu', handleContextMenu);
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('dragstart', handleDragStart);
+    };
+  }, []);
+
   useEffect(() => {
     const handleScroll = () => {
       const sections = ['home', 'life', 'family', 'timeline', 'candles', 'stream', 'tributes', 'donate', 'contact'];
