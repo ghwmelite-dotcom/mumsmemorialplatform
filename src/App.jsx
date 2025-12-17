@@ -653,7 +653,7 @@ const HeroSection = () => {
               <img
                 src="/photos/hero-2017.jpeg"
                 alt="Josephine Worla Ameovi at Retiree Staff Meeting 2017"
-                className="w-full h-full object-cover object-center"
+                className="w-full h-full object-cover object-top scale-110"
               />
             </div>
           </div>
@@ -1028,28 +1028,28 @@ const PhotoTimelineSection = () => {
                     <div
                       key={photo.id}
                       onClick={() => setSelectedPhoto(photo)}
-                      className="relative aspect-square bg-gradient-to-br from-white to-warm-white rounded-2xl overflow-hidden cursor-pointer group shadow-soft hover:shadow-elevated transition-all duration-500 photo-hover"
+                      className="relative aspect-[3/4] bg-gradient-to-br from-white to-warm-white rounded-2xl overflow-hidden cursor-pointer group shadow-soft hover:shadow-elevated transition-all duration-500 photo-hover"
                       style={{ transitionDelay: `${photoIndex * 100}ms` }}
                     >
                       {/* Actual photo */}
                       <img
                         src={photo.src}
                         alt={photo.label}
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                        className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105"
                       />
 
-                      {/* Gradient overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-charcoal/80 via-charcoal/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500" />
+                      {/* Subtle gradient overlay for text readability */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-charcoal/70 via-transparent to-transparent" />
 
-                      {/* Label overlay */}
-                      <div className="absolute bottom-0 left-0 right-0 p-3 text-white transform translate-y-full group-hover:translate-y-0 transition-transform duration-500">
-                        <p className="text-sm font-medium">{photo.label}</p>
-                        <p className="text-xs text-gold">{photo.year}</p>
+                      {/* Label overlay - always visible at bottom */}
+                      <div className="absolute bottom-0 left-0 right-0 p-3 text-white">
+                        <p className="text-sm font-medium drop-shadow-lg">{photo.label}</p>
+                        <p className="text-xs text-gold drop-shadow-lg">{photo.year}</p>
                       </div>
 
                       {/* Corner decorations on hover */}
                       <div className="absolute top-2 left-2 w-6 h-6 border-l-2 border-t-2 border-gold opacity-0 group-hover:opacity-100 transition-all duration-500 transform -translate-x-2 -translate-y-2 group-hover:translate-x-0 group-hover:translate-y-0" />
-                      <div className="absolute bottom-2 right-2 w-6 h-6 border-r-2 border-b-2 border-gold opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-x-2 translate-y-2 group-hover:translate-x-0 group-hover:translate-y-0" />
+                      <div className="absolute top-2 right-2 w-6 h-6 border-r-2 border-t-2 border-gold opacity-0 group-hover:opacity-100 transition-all duration-500 transform translate-x-2 -translate-y-2 group-hover:translate-x-0 group-hover:translate-y-0" />
                     </div>
                   ))}
                 </div>
