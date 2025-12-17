@@ -1808,55 +1808,111 @@ const Footer = () => {
   const [footerRef, footerVisible] = useScrollReveal();
 
   return (
-    <footer className="bg-charcoal text-white py-16 relative overflow-hidden" ref={footerRef}>
+    <footer className="bg-gradient-to-b from-charcoal via-charcoal-light to-charcoal text-white py-20 relative overflow-hidden" ref={footerRef}>
+      {/* Kente Border at top */}
       <KenteBorder className="absolute top-0 left-0 right-0 h-2" />
 
-      {/* Animated background */}
+      {/* Rich animated background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] border border-gold/5 rounded-full animate-spin-slow" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] border border-gold/5 rounded-full animate-spin-slow" style={{ animationDirection: 'reverse', animationDuration: '40s' }} />
+        {/* Gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-charcoal via-transparent to-charcoal/50" />
+
+        {/* Large glowing orbs */}
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-gold/5 rounded-full blur-3xl animate-float-slow" />
+        <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-burgundy/5 rounded-full blur-3xl animate-float-slow-reverse" />
+
+        {/* Spinning circles */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] border border-gold/10 rounded-full animate-spin-slow" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[450px] h-[450px] border border-gold/5 rounded-full animate-spin-slow" style={{ animationDirection: 'reverse', animationDuration: '35s' }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] border border-burgundy/10 rounded-full animate-spin-slow" style={{ animationDuration: '45s' }} />
+
+        {/* Twinkling stars */}
+        {Array.from({ length: 20 }).map((_, i) => (
+          <div
+            key={i}
+            className="absolute w-1 h-1 bg-gold/40 rounded-full animate-twinkle"
+            style={{
+              left: `${5 + (i * 4.5)}%`,
+              top: `${10 + ((i * 17) % 80)}%`,
+              animationDelay: `${i * 0.2}s`
+            }}
+          />
+        ))}
+
+        {/* Floating particles */}
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div
+            key={`particle-${i}`}
+            className="absolute w-2 h-2 bg-gold/20 rounded-full animate-float-up-fade"
+            style={{
+              left: `${10 + (i * 11)}%`,
+              bottom: '-10px',
+              animationDelay: `${i * 0.7}s`,
+              animationDuration: '6s'
+            }}
+          />
+        ))}
+
+        {/* Decorative corner ornaments */}
+        <div className="absolute top-8 left-8 w-16 h-16 border-l-2 border-t-2 border-gold/20 rounded-tl-lg" />
+        <div className="absolute top-8 right-8 w-16 h-16 border-r-2 border-t-2 border-gold/20 rounded-tr-lg" />
+        <div className="absolute bottom-8 left-8 w-16 h-16 border-l-2 border-b-2 border-gold/20 rounded-bl-lg" />
+        <div className="absolute bottom-8 right-8 w-16 h-16 border-r-2 border-b-2 border-gold/20 rounded-br-lg" />
       </div>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative">
+        {/* Decorative top element */}
         <div
-          className="mb-6 transition-all duration-700"
+          className="mb-8 transition-all duration-700"
           style={{ opacity: footerVisible ? 1 : 0, transform: footerVisible ? 'translateY(0) scale(1)' : 'translateY(20px) scale(0.8)' }}
         >
-          <span className="text-gold text-3xl animate-twinkle inline-block">✦</span>
+          <div className="flex items-center justify-center gap-3">
+            <span className="h-px w-12 bg-gradient-to-r from-transparent to-gold/50" />
+            <span className="text-gold text-3xl animate-twinkle inline-block">✦</span>
+            <span className="h-px w-12 bg-gradient-to-l from-transparent to-gold/50" />
+          </div>
         </div>
 
         <h2
-          className="font-display text-3xl md:text-4xl text-white mb-2 transition-all duration-700"
+          className="font-display text-3xl md:text-5xl text-white mb-3 transition-all duration-700"
           style={{ opacity: footerVisible ? 1 : 0, transform: footerVisible ? 'translateY(0)' : 'translateY(20px)', transitionDelay: '100ms' }}
         >
           Josephine Worla Ameovi
         </h2>
 
         <p
-          className="text-gold text-lg mb-2 animate-gradient-text transition-all duration-700"
+          className="text-gold text-xl mb-3 animate-gradient-text transition-all duration-700 font-display italic"
           style={{ opacity: footerVisible ? 1 : 0, transform: footerVisible ? 'translateY(0)' : 'translateY(20px)', transitionDelay: '200ms' }}
         >
           "{t('hero.grandma')}"
         </p>
 
         <p
-          className="text-white/60 mb-8 transition-all duration-700"
+          className="text-white/70 mb-10 text-lg transition-all duration-700"
           style={{ opacity: footerVisible ? 1 : 0, transitionDelay: '300ms' }}
         >
           July 15, 1948 — December 14, 2025
         </p>
 
+        {/* Memorial quote card */}
         <div
-          className="flex items-center justify-center gap-4 mb-8 transition-all duration-700"
+          className="max-w-md mx-auto mb-10 p-6 rounded-2xl bg-white/5 backdrop-blur-sm border border-gold/20 transition-all duration-700"
+          style={{ opacity: footerVisible ? 1 : 0, transform: footerVisible ? 'translateY(0)' : 'translateY(20px)', transitionDelay: '350ms' }}
+        >
+          <p className="text-white/80 italic font-display">"Those we love don't go away, they walk beside us every day."</p>
+        </div>
+
+        <div
+          className="flex items-center justify-center gap-4 mb-10 transition-all duration-700"
           style={{ opacity: footerVisible ? 1 : 0, transitionDelay: '400ms' }}
         >
-          <span className="h-px w-16 bg-gold/40 transition-all duration-1000" style={{ width: footerVisible ? '4rem' : '0' }} />
-          <span className="text-gold hover:text-gold-light transition-colors duration-300 cursor-default">{t('footer.foreverInHearts')}</span>
-          <span className="h-px w-16 bg-gold/40 transition-all duration-1000" style={{ width: footerVisible ? '4rem' : '0' }} />
+          <span className="h-px bg-gradient-to-r from-transparent via-gold/60 to-transparent transition-all duration-1000" style={{ width: footerVisible ? '6rem' : '0' }} />
+          <span className="text-gold hover:text-gold-light transition-colors duration-300 cursor-default font-medium">{t('footer.foreverInHearts')}</span>
+          <span className="h-px bg-gradient-to-r from-transparent via-gold/60 to-transparent transition-all duration-1000" style={{ width: footerVisible ? '6rem' : '0' }} />
         </div>
 
         <p
-          className="text-white/40 text-sm hover:text-white/60 transition-all duration-500"
+          className="text-white/50 text-sm hover:text-white/70 transition-all duration-500"
           style={{ opacity: footerVisible ? 1 : 0, transitionDelay: '500ms' }}
         >
           {t('footer.builtWithLove')}
@@ -1865,8 +1921,9 @@ const Footer = () => {
         {/* Scroll to top button */}
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="mt-8 mx-auto w-10 h-10 rounded-full border border-gold/30 flex items-center justify-center text-gold/50 hover:text-gold hover:border-gold hover:bg-gold/10 transition-all duration-300 group"
+          className="mt-10 mx-auto w-12 h-12 rounded-full border-2 border-gold/30 flex items-center justify-center text-gold/60 hover:text-gold hover:border-gold hover:bg-gold/10 hover:scale-110 transition-all duration-300 group shadow-lg shadow-gold/10"
           style={{ opacity: footerVisible ? 1 : 0, transitionDelay: '600ms' }}
+          aria-label="Scroll to top"
         >
           <svg className="w-5 h-5 transform transition-transform duration-300 group-hover:-translate-y-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
