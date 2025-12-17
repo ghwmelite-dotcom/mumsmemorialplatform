@@ -36,7 +36,7 @@ const PAYSTACK_PUBLIC_KEY = 'pk_test_9cdde18d25bee33638801838a5779d21f1e7e423';
 // To add songs: 1) Put MP3 files in public/audio/ folder
 //               2) Update the url paths below (e.g., '/audio/song-name.mp3')
 const MUSIC_PLAYLIST = [
-  { title: 'A Faithful Life Remembered Through Music', artist: 'Memorial Hymns Collection (12 Tracks)', url: '/audio/A Faithful Life Remembered Through Music.mp3' }
+  { title: 'A Faithful Life Remembered Through Music', artist: 'Memorial Hymns Collection (12 Tracks)', url: '/audio/memorial-hymns.mp3' }
 ];
 
 // Family tree data
