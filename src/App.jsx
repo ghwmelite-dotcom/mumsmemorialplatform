@@ -628,15 +628,46 @@ const MemorialGarden = ({ showToast }) => {
     }
   };
 
+  // Dynamic sizing based on flower count
+  const getFlowerSize = (count) => {
+    if (count <= 12) return 'text-3xl sm:text-4xl';
+    if (count <= 24) return 'text-2xl sm:text-3xl';
+    if (count <= 48) return 'text-xl sm:text-2xl';
+    if (count <= 96) return 'text-lg sm:text-xl';
+    return 'text-base sm:text-lg';
+  };
+
+  // Dynamic grid columns based on flower count
+  const getGridCols = (count) => {
+    if (count <= 12) return 'grid-cols-4 sm:grid-cols-6 md:grid-cols-6 lg:grid-cols-6';
+    if (count <= 24) return 'grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-8';
+    if (count <= 48) return 'grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12';
+    if (count <= 96) return 'grid-cols-8 sm:grid-cols-10 md:grid-cols-12 lg:grid-cols-16';
+    return 'grid-cols-10 sm:grid-cols-12 md:grid-cols-16 lg:grid-cols-20';
+  };
+
+  // Dynamic gap based on flower count
+  const getGap = (count) => {
+    if (count <= 12) return 'gap-4 sm:gap-5';
+    if (count <= 24) return 'gap-3 sm:gap-4';
+    if (count <= 48) return 'gap-2 sm:gap-3';
+    if (count <= 96) return 'gap-1.5 sm:gap-2';
+    return 'gap-1 sm:gap-1.5';
+  };
+
+  const flowerSize = getFlowerSize(flowers.length);
+  const gridCols = getGridCols(flowers.length);
+  const gridGap = getGap(flowers.length);
+
   return (
-    <section className="py-24 md:py-32 bg-gradient-to-b from-forest/5 via-cream to-cream relative overflow-hidden">
+    <section className="py-16 sm:py-20 md:py-28 bg-gradient-to-b from-forest/5 via-cream to-cream relative overflow-hidden">
       {/* Garden background elements */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-forest/20 to-transparent" />
       </div>
       <GoldenRainParticles intensity="light" />
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 relative">
         <SectionHeading
           eyebrow="Memorial Garden"
           title="Plant a Flower in Her Memory"
@@ -645,63 +676,83 @@ const MemorialGarden = ({ showToast }) => {
 
         {/* Garden Grid */}
         <AnimatedSection delay={200}>
-          <div className="bg-gradient-to-b from-green-50 to-green-100/50 rounded-3xl p-8 mb-12 shadow-soft border border-green-200/30">
-            <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-3">
-              {flowers.map((flower, index) => {
-                const type = flowerTypes[flower.type] || flowerTypes.rose;
-                const isNew = flower.id === newFlowerId;
-                return (
-                  <div
-                    key={flower.id}
-                    className={`relative group cursor-pointer ${isNew ? 'animate-bloom' : ''}`}
-                    style={{ animationDelay: `${index * 50}ms` }}
-                    title={flower.name}
-                  >
-                    <div className="animate-sway">
-                      <div className="text-2xl sm:text-3xl transform transition-transform duration-300 group-hover:scale-125">
-                        {type.emoji}
+          <div className="bg-gradient-to-b from-green-50/80 to-green-100/60 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 mb-8 sm:mb-12 shadow-soft border border-green-200/30 backdrop-blur-sm">
+            {/* Loading state */}
+            {isLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-2 border-forest border-t-transparent"></div>
+                <span className="ml-3 text-forest">Loading garden...</span>
+              </div>
+            ) : (
+              <>
+                {/* Flower Grid - Responsive with dynamic sizing */}
+                <div className={`grid ${gridCols} ${gridGap} justify-items-center`}>
+                  {flowers.map((flower, index) => {
+                    const type = flowerTypes[flower.type] || flowerTypes.rose;
+                    const isNew = flower.id === newFlowerId;
+                    return (
+                      <div
+                        key={flower.id}
+                        className={`relative group cursor-pointer transition-all duration-300 ${isNew ? 'animate-bloom' : ''}`}
+                        style={{ animationDelay: `${Math.min(index * 30, 1000)}ms` }}
+                      >
+                        <div className="animate-sway">
+                          <div className={`${flowerSize} transform transition-transform duration-300 group-hover:scale-125 group-hover:rotate-6`}>
+                            {type.emoji}
+                          </div>
+                        </div>
+                        {/* Tooltip - responsive positioning */}
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 sm:mb-2 px-2 py-1 bg-charcoal/90 text-white text-[10px] sm:text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-20 shadow-lg max-w-[120px] sm:max-w-none truncate">
+                          {flower.name}
+                        </div>
+                        {/* Glow effect on hover */}
+                        <div className="absolute inset-0 rounded-full bg-green-400/0 group-hover:bg-green-400/20 blur-md transition-all duration-300 -z-10"></div>
                       </div>
-                    </div>
-                    {/* Tooltip */}
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-charcoal text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
-                      {flower.name}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                    );
+                  })}
+                </div>
 
-            {/* Garden stats */}
-            <div className="mt-6 pt-6 border-t border-green-200/50 flex items-center justify-center gap-6 text-sm text-forest">
-              <span className="flex items-center gap-2">
-                <span className="text-lg">🌱</span>
-                {flowers.length} flowers planted
-              </span>
-              <span className="flex items-center gap-2">
-                <span className="text-lg">💚</span>
-                Growing with love
-              </span>
-            </div>
+                {/* Garden stats - responsive */}
+                <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-green-200/50 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 text-xs sm:text-sm text-forest">
+                  <span className="flex items-center gap-2">
+                    <span className="text-base sm:text-lg">🌱</span>
+                    <span className="font-medium">{flowers.length}</span> flowers planted
+                  </span>
+                  <span className="hidden sm:inline text-green-300">•</span>
+                  <span className="flex items-center gap-2">
+                    <span className="text-base sm:text-lg">💚</span>
+                    Growing with love
+                  </span>
+                </div>
+              </>
+            )}
           </div>
         </AnimatedSection>
 
-        {/* Plant Form */}
+        {/* Plant Form - Responsive */}
         <AnimatedSection delay={400}>
-          <Card className="max-w-md mx-auto p-6">
-            <h3 className="font-display text-xl text-charcoal mb-4 text-center">Plant Your Flower</h3>
-            <form onSubmit={plantFlower} className="flex gap-3">
+          <Card className="max-w-md mx-auto p-4 sm:p-6">
+            <h3 className="font-display text-lg sm:text-xl text-charcoal mb-3 sm:mb-4 text-center">Plant Your Flower</h3>
+            <form onSubmit={plantFlower} className="flex flex-col sm:flex-row gap-3">
               <input
                 type="text"
                 value={plantName}
                 onChange={(e) => setPlantName(e.target.value)}
                 placeholder="Your name"
-                className="flex-1 px-4 py-3 rounded-xl border-2 border-warm-gray/20 focus:border-forest focus:ring-0 outline-none transition-colors bg-cream/50"
+                className="flex-1 px-4 py-3 rounded-xl border-2 border-warm-gray/20 focus:border-forest focus:ring-0 outline-none transition-colors bg-cream/50 text-sm sm:text-base"
                 maxLength={30}
               />
-              <Button type="submit" disabled={isPlanting || !plantName.trim()}>
-                {isPlanting ? '🌱' : '🌸 Plant'}
+              <Button type="submit" disabled={isPlanting || !plantName.trim()} className="w-full sm:w-auto justify-center">
+                {isPlanting ? (
+                  <span className="flex items-center gap-2">
+                    <span className="animate-spin">🌱</span> Planting...
+                  </span>
+                ) : (
+                  '🌸 Plant'
+                )}
               </Button>
             </form>
+            <p className="text-center text-xs text-warm-gray mt-3">Your flower will be visible to all visitors</p>
           </Card>
         </AnimatedSection>
       </div>
