@@ -869,6 +869,274 @@
 .to-warm-white { --tw-gradient-to: var(--warm-white); }
 
 /* ============================================
+   PREMIUM FEATURES ANIMATIONS
+   ============================================ */
+
+/* Feature 1: Floating Photo Memories */
+@keyframes float-photo {
+  0%, 100% {
+    transform: translateY(0) rotate(var(--rotation, 0deg));
+  }
+  50% {
+    transform: translateY(-20px) rotate(calc(var(--rotation, 0deg) + 2deg));
+  }
+}
+
+.animate-float-photo {
+  animation: float-photo var(--duration, 6s) ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+}
+
+/* Feature 2: Life Journey Path Drawing */
+@keyframes draw-path {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-draw-path {
+  animation: draw-path 3s ease-out forwards;
+}
+
+@keyframes pulse-node {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(212, 175, 55, 0.4);
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 10px rgba(212, 175, 55, 0);
+  }
+}
+
+.animate-pulse-node {
+  animation: pulse-node 2s ease-in-out infinite;
+}
+
+/* Feature 3: 3D Gallery Effect */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.transform-style-3d {
+  transform-style: preserve-3d;
+}
+
+/* Feature 4: Golden Rain Particles */
+@keyframes golden-rain {
+  0% {
+    transform: translateY(-10px) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+.animate-golden-rain {
+  animation: golden-rain linear infinite;
+}
+
+/* Feature 5: Music Player Visualizer */
+@keyframes equalizer {
+  0%, 100% {
+    height: 4px;
+  }
+  50% {
+    height: var(--max-height, 20px);
+  }
+}
+
+.animate-equalizer {
+  animation: equalizer var(--speed, 0.5s) ease-in-out infinite;
+}
+
+/* Feature 6: Audio Waveform */
+@keyframes waveform {
+  0%, 100% {
+    transform: scaleY(0.3);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+.animate-waveform {
+  animation: waveform 0.5s ease-in-out infinite;
+}
+
+/* Feature 7: Garden Flower Bloom */
+@keyframes bloom {
+  0% {
+    transform: scale(0) rotate(-180deg);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+.animate-bloom {
+  animation: bloom 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes sway {
+  0%, 100% {
+    transform: rotate(-3deg);
+  }
+  50% {
+    transform: rotate(3deg);
+  }
+}
+
+.animate-sway {
+  animation: sway 3s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+/* Feature 8: Handwriting Animation */
+@keyframes handwriting {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-handwriting {
+  animation: handwriting 2s ease-out forwards;
+}
+
+@keyframes typewriter {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}
+
+.animate-typewriter {
+  overflow: hidden;
+  white-space: nowrap;
+  animation: typewriter 2s steps(40) forwards;
+}
+
+/* Feature 9: Constellation Twinkle */
+@keyframes constellation-twinkle {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.5);
+  }
+}
+
+.animate-constellation {
+  animation: constellation-twinkle var(--duration, 3s) ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+}
+
+@keyframes connect-line {
+  from {
+    stroke-dashoffset: 100;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-connect-line {
+  animation: connect-line 1s ease-out forwards;
+}
+
+/* Feature 10: Globe Pulse */
+@keyframes globe-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+}
+
+.animate-globe-pulse {
+  animation: globe-pulse 3s ease-in-out infinite;
+}
+
+@keyframes visitor-ping {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(3);
+    opacity: 0;
+  }
+}
+
+.animate-visitor-ping {
+  animation: visitor-ping 1.5s ease-out infinite;
+}
+
+/* Golden Shimmer Text Effect */
+@keyframes shimmer-text {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.text-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--gold) 0%,
+    var(--gold-light) 25%,
+    #fff 50%,
+    var(--gold-light) 75%,
+    var(--gold) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer-text 4s linear infinite;
+}
+
+/* Music Player Styles */
+.music-player-mini {
+  backdrop-filter: blur(20px);
+  background: rgba(44, 40, 37, 0.9);
+}
+
+/* Garden Grid */
+.garden-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+  gap: 8px;
+}
+
+/* Constellation Canvas */
+.constellation-canvas {
+  background: radial-gradient(ellipse at center, rgba(26, 35, 126, 0.1) 0%, transparent 70%);
+}
+
+/* ============================================
    PRINT STYLES
    ============================================ */
 

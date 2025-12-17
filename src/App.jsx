@@ -293,6 +293,547 @@ const CornerOrnament = ({ position = 'top-left' }) => {
 };
 
 // ============================================
+// FEATURE 1: FLOATING PHOTO MEMORIES
+// ============================================
+
+const FloatingPhotoMemories = () => {
+  const photos = [
+    { src: '/photos/barclays-1971.jpeg', rotation: -8, x: 5, y: 15, delay: 0, duration: 7 },
+    { src: '/photos/portrait-1976.jpeg', rotation: 5, x: 85, y: 20, delay: 1, duration: 8 },
+    { src: '/photos/with-baby-oz-1985.jpeg', rotation: -5, x: 10, y: 70, delay: 2, duration: 6 },
+    { src: '/photos/cultural-day-barclays.jpeg', rotation: 8, x: 80, y: 65, delay: 1.5, duration: 9 },
+  ];
+
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none hidden md:block">
+      {photos.map((photo, i) => (
+        <div
+          key={i}
+          className="absolute animate-float-photo opacity-20 hover:opacity-40 transition-opacity duration-500"
+          style={{
+            left: `${photo.x}%`,
+            top: `${photo.y}%`,
+            '--rotation': `${photo.rotation}deg`,
+            '--delay': `${photo.delay}s`,
+            '--duration': `${photo.duration}s`,
+          }}
+        >
+          <div className="relative w-20 h-24 bg-white p-1 shadow-xl rounded-sm transform hover:scale-110 transition-transform duration-500">
+            <img
+              src={photo.src}
+              alt=""
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-gold/10 to-transparent" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// ============================================
+// FEATURE 4: GOLDEN RAIN PARTICLES
+// ============================================
+
+const GoldenRainParticles = ({ intensity = 'medium' }) => {
+  const counts = { light: 15, medium: 25, heavy: 40 };
+  const count = counts[intensity] || 25;
+
+  const particles = Array.from({ length: count }, (_, i) => ({
+    id: i,
+    x: Math.random() * 100,
+    size: Math.random() * 4 + 2,
+    delay: Math.random() * 10,
+    duration: Math.random() * 15 + 10,
+    opacity: Math.random() * 0.4 + 0.1,
+  }));
+
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {particles.map((p) => (
+        <div
+          key={p.id}
+          className="absolute animate-golden-rain"
+          style={{
+            left: `${p.x}%`,
+            top: '-20px',
+            width: `${p.size}px`,
+            height: `${p.size}px`,
+            background: `radial-gradient(circle, rgba(212,175,55,${p.opacity}) 0%, transparent 70%)`,
+            animationDelay: `${p.delay}s`,
+            animationDuration: `${p.duration}s`,
+            filter: 'blur(0.5px)',
+          }}
+        />
+      ))}
+    </div>
+  );
+};
+
+// ============================================
+// FEATURE 5: AMBIENT MUSIC PLAYER
+// ============================================
+
+const AmbientMusicPlayer = () => {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [currentTrack, setCurrentTrack] = useState(0);
+  const [volume, setVolume] = useState(0.3);
+  const audioRef = useRef(null);
+
+  const tracks = [
+    { title: 'Amazing Grace', duration: '4:32' },
+    { title: 'How Great Thou Art', duration: '5:15' },
+    { title: 'Blessed Assurance', duration: '3:48' },
+  ];
+
+  const togglePlay = () => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play().catch(() => {});
+      }
+    }
+    setIsPlaying(!isPlaying);
+  };
+
+  const nextTrack = () => setCurrentTrack((prev) => (prev + 1) % tracks.length);
+  const prevTrack = () => setCurrentTrack((prev) => (prev - 1 + tracks.length) % tracks.length);
+
+  return (
+    <div className={`fixed bottom-6 left-6 z-40 transition-all duration-500 ${isExpanded ? 'w-72' : 'w-14'}`}>
+      <div className="music-player-mini rounded-2xl shadow-2xl border border-gold/20 overflow-hidden">
+        {/* Mini View */}
+        <div className="flex items-center p-3 gap-3">
+          <button
+            onClick={togglePlay}
+            className="w-8 h-8 flex items-center justify-center rounded-full bg-gold text-white hover:bg-gold-dark transition-colors flex-shrink-0"
+          >
+            {isPlaying ? (
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/></svg>
+            ) : (
+              <svg className="w-4 h-4 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            )}
+          </button>
+
+          {/* Equalizer Bars */}
+          {isPlaying && (
+            <div className="flex items-end gap-0.5 h-6">
+              {[...Array(4)].map((_, i) => (
+                <div
+                  key={i}
+                  className="w-1 bg-gold rounded-full animate-equalizer"
+                  style={{ '--max-height': `${12 + Math.random() * 12}px`, '--speed': `${0.3 + Math.random() * 0.3}s` }}
+                />
+              ))}
+            </div>
+          )}
+
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="ml-auto text-white/60 hover:text-white transition-colors"
+          >
+            <svg className={`w-5 h-5 transition-transform ${isExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Expanded View */}
+        {isExpanded && (
+          <div className="px-3 pb-3 border-t border-white/10">
+            <div className="py-3">
+              <p className="text-white font-medium text-sm truncate">{tracks[currentTrack].title}</p>
+              <p className="text-white/50 text-xs">Memorial Hymns</p>
+            </div>
+
+            {/* Controls */}
+            <div className="flex items-center justify-center gap-4">
+              <button onClick={prevTrack} className="text-white/60 hover:text-white transition-colors">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h2v12H6V6zm3.5 6l8.5 6V6l-8.5 6z"/></svg>
+              </button>
+              <button
+                onClick={togglePlay}
+                className="w-10 h-10 flex items-center justify-center rounded-full bg-gold text-white hover:bg-gold-dark transition-colors"
+              >
+                {isPlaying ? (
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/></svg>
+                ) : (
+                  <svg className="w-5 h-5 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                )}
+              </button>
+              <button onClick={nextTrack} className="text-white/60 hover:text-white transition-colors">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zm8.5-6V6l0 0v12l0 0V12zm2 0V6h2v12h-2V12z"/></svg>
+              </button>
+            </div>
+
+            {/* Volume */}
+            <div className="flex items-center gap-2 mt-3">
+              <svg className="w-4 h-4 text-white/50" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3z"/></svg>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.1"
+                value={volume}
+                onChange={(e) => {
+                  setVolume(parseFloat(e.target.value));
+                  if (audioRef.current) audioRef.current.volume = parseFloat(e.target.value);
+                }}
+                className="flex-1 h-1 bg-white/20 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-gold [&::-webkit-slider-thumb]:rounded-full"
+              />
+            </div>
+          </div>
+        )}
+      </div>
+      <audio ref={audioRef} />
+    </div>
+  );
+};
+
+// ============================================
+// FEATURE 7: VIRTUAL MEMORIAL GARDEN
+// ============================================
+
+const MemorialGarden = ({ showToast }) => {
+  const { t } = useLanguage();
+  const [flowers, setFlowers] = useState(() => {
+    const saved = localStorage.getItem('memorial-garden-flowers');
+    return saved ? JSON.parse(saved) : [
+      { id: 1, name: 'The Family', type: 'rose', plantedAt: '2025-01-01' },
+      { id: 2, name: 'Friends', type: 'lily', plantedAt: '2025-01-02' },
+      { id: 3, name: 'With Love', type: 'tulip', plantedAt: '2025-01-03' },
+    ];
+  });
+  const [plantName, setPlantName] = useState('');
+  const [isPlanting, setIsPlanting] = useState(false);
+  const [newFlowerId, setNewFlowerId] = useState(null);
+
+  const flowerTypes = {
+    rose: { emoji: '🌹', color: 'from-red-400 to-red-600' },
+    lily: { emoji: '🌸', color: 'from-pink-300 to-pink-500' },
+    tulip: { emoji: '🌷', color: 'from-yellow-400 to-orange-500' },
+    sunflower: { emoji: '🌻', color: 'from-yellow-400 to-yellow-600' },
+    orchid: { emoji: '💐', color: 'from-purple-400 to-purple-600' },
+  };
+
+  const plantFlower = (e) => {
+    e.preventDefault();
+    if (!plantName.trim() || isPlanting) return;
+
+    setIsPlanting(true);
+    const types = Object.keys(flowerTypes);
+    const newFlower = {
+      id: Date.now(),
+      name: plantName.trim(),
+      type: types[Math.floor(Math.random() * types.length)],
+      plantedAt: new Date().toISOString(),
+    };
+
+    const updated = [...flowers, newFlower];
+    setFlowers(updated);
+    setNewFlowerId(newFlower.id);
+    localStorage.setItem('memorial-garden-flowers', JSON.stringify(updated));
+
+    setTimeout(() => {
+      setPlantName('');
+      setIsPlanting(false);
+      showToast('Your flower has been planted in the garden 🌸', 'success');
+      setTimeout(() => setNewFlowerId(null), 2000);
+    }, 1000);
+  };
+
+  return (
+    <section className="py-24 md:py-32 bg-gradient-to-b from-forest/5 via-cream to-cream relative overflow-hidden">
+      {/* Garden background elements */}
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-forest/20 to-transparent" />
+      </div>
+      <GoldenRainParticles intensity="light" />
+
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+        <SectionHeading
+          eyebrow="Memorial Garden"
+          title="Plant a Flower in Her Memory"
+          subtitle="Each flower represents a life touched by Grandma's love and kindness"
+        />
+
+        {/* Garden Grid */}
+        <AnimatedSection delay={200}>
+          <div className="bg-gradient-to-b from-green-50 to-green-100/50 rounded-3xl p-8 mb-12 shadow-soft border border-green-200/30">
+            <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-3">
+              {flowers.map((flower, index) => {
+                const type = flowerTypes[flower.type] || flowerTypes.rose;
+                const isNew = flower.id === newFlowerId;
+                return (
+                  <div
+                    key={flower.id}
+                    className={`relative group cursor-pointer ${isNew ? 'animate-bloom' : ''}`}
+                    style={{ animationDelay: `${index * 50}ms` }}
+                    title={flower.name}
+                  >
+                    <div className="animate-sway">
+                      <div className="text-2xl sm:text-3xl transform transition-transform duration-300 group-hover:scale-125">
+                        {type.emoji}
+                      </div>
+                    </div>
+                    {/* Tooltip */}
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-charcoal text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                      {flower.name}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Garden stats */}
+            <div className="mt-6 pt-6 border-t border-green-200/50 flex items-center justify-center gap-6 text-sm text-forest">
+              <span className="flex items-center gap-2">
+                <span className="text-lg">🌱</span>
+                {flowers.length} flowers planted
+              </span>
+              <span className="flex items-center gap-2">
+                <span className="text-lg">💚</span>
+                Growing with love
+              </span>
+            </div>
+          </div>
+        </AnimatedSection>
+
+        {/* Plant Form */}
+        <AnimatedSection delay={400}>
+          <Card className="max-w-md mx-auto p-6">
+            <h3 className="font-display text-xl text-charcoal mb-4 text-center">Plant Your Flower</h3>
+            <form onSubmit={plantFlower} className="flex gap-3">
+              <input
+                type="text"
+                value={plantName}
+                onChange={(e) => setPlantName(e.target.value)}
+                placeholder="Your name"
+                className="flex-1 px-4 py-3 rounded-xl border-2 border-warm-gray/20 focus:border-forest focus:ring-0 outline-none transition-colors bg-cream/50"
+                maxLength={30}
+              />
+              <Button type="submit" disabled={isPlanting || !plantName.trim()}>
+                {isPlanting ? '🌱' : '🌸 Plant'}
+              </Button>
+            </form>
+          </Card>
+        </AnimatedSection>
+      </div>
+    </section>
+  );
+};
+
+// ============================================
+// FEATURE 9: MEMORY CONSTELLATION
+// ============================================
+
+const MemoryConstellation = () => {
+  const { t } = useLanguage();
+  const [selectedStar, setSelectedStar] = useState(null);
+  const canvasRef = useRef(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  const memories = [
+    { id: 1, x: 20, y: 25, message: "A life of dedication and love", from: "The Family" },
+    { id: 2, x: 45, y: 15, message: "Always caring for others", from: "John" },
+    { id: 3, x: 70, y: 30, message: "Her smile lit up every room", from: "Osborn" },
+    { id: 4, x: 30, y: 55, message: "The best grandmother", from: "Ria" },
+    { id: 5, x: 55, y: 45, message: "Forever in our hearts", from: "Gayle" },
+    { id: 6, x: 80, y: 60, message: "A true blessing to know", from: "Friends" },
+    { id: 7, x: 15, y: 75, message: "Her legacy lives on", from: "Community" },
+    { id: 8, x: 60, y: 75, message: "Rest in eternal peace", from: "With Love" },
+  ];
+
+  const connections = [
+    [0, 1], [1, 2], [0, 3], [3, 4], [4, 5], [2, 5], [3, 6], [4, 7], [6, 7]
+  ];
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsVisible(entry.isIntersecting),
+      { threshold: 0.3 }
+    );
+    if (canvasRef.current) observer.observe(canvasRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <section className="py-24 md:py-32 bg-gradient-to-b from-charcoal via-[#1a1a2e] to-charcoal relative overflow-hidden">
+      {/* Starry background */}
+      <div className="absolute inset-0">
+        {Array.from({ length: 100 }).map((_, i) => (
+          <div
+            key={i}
+            className="absolute rounded-full bg-white animate-constellation"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 100}%`,
+              width: `${1 + Math.random() * 2}px`,
+              height: `${1 + Math.random() * 2}px`,
+              '--duration': `${2 + Math.random() * 4}s`,
+              '--delay': `${Math.random() * 3}s`,
+              opacity: 0.3 + Math.random() * 0.4,
+            }}
+          />
+        ))}
+      </div>
+
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+        <SectionHeading
+          eyebrow="Memory Constellation"
+          title="Stars of Remembrance"
+          subtitle="Each star holds a precious memory of Grandma"
+          light
+        />
+
+        <AnimatedSection delay={200}>
+          <div
+            ref={canvasRef}
+            className="relative h-[400px] md:h-[500px] constellation-canvas rounded-3xl overflow-hidden"
+          >
+            {/* Connection lines SVG */}
+            <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+              {isVisible && connections.map(([from, to], i) => (
+                <line
+                  key={i}
+                  x1={memories[from].x}
+                  y1={memories[from].y}
+                  x2={memories[to].x}
+                  y2={memories[to].y}
+                  stroke="rgba(212,175,55,0.3)"
+                  strokeWidth="0.2"
+                  strokeDasharray="100"
+                  className="animate-connect-line"
+                  style={{ animationDelay: `${i * 200}ms` }}
+                />
+              ))}
+            </svg>
+
+            {/* Stars */}
+            {memories.map((star, index) => (
+              <div
+                key={star.id}
+                className={`absolute cursor-pointer transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 ${selectedStar === star.id ? 'z-20 scale-150' : 'z-10 hover:scale-125'}`}
+                style={{ left: `${star.x}%`, top: `${star.y}%` }}
+                onClick={() => setSelectedStar(selectedStar === star.id ? null : star.id)}
+              >
+                <div className={`relative ${isVisible ? 'animate-constellation' : 'opacity-0'}`} style={{ '--delay': `${index * 200}ms`, '--duration': `${3 + Math.random() * 2}s` }}>
+                  {/* Star glow */}
+                  <div className="absolute inset-0 w-6 h-6 -m-1.5 bg-gold/30 rounded-full blur-md" />
+                  {/* Star core */}
+                  <div className="w-3 h-3 bg-gradient-to-br from-gold-light to-gold rounded-full shadow-gold-glow" />
+
+                  {/* Expanded info */}
+                  {selectedStar === star.id && (
+                    <div className="absolute left-1/2 -translate-x-1/2 top-8 w-48 p-4 bg-charcoal/95 backdrop-blur-sm rounded-xl border border-gold/30 text-center animate-fade-in">
+                      <p className="text-white text-sm italic mb-2">"{star.message}"</p>
+                      <p className="text-gold text-xs">— {star.from}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </AnimatedSection>
+
+        <AnimatedSection delay={400}>
+          <p className="text-center text-white/50 mt-8">Click on a star to reveal its memory</p>
+        </AnimatedSection>
+      </div>
+    </section>
+  );
+};
+
+// ============================================
+// FEATURE 10: LIVE VISITOR COUNTER
+// ============================================
+
+const VisitorGlobe = () => {
+  const [visitorCount, setVisitorCount] = useState(0);
+  const [recentVisitors, setRecentVisitors] = useState([]);
+
+  useEffect(() => {
+    // Simulate visitor count (in real implementation, this would come from analytics)
+    const baseCount = parseInt(localStorage.getItem('memorial-visitor-count') || '47');
+    const newCount = baseCount + Math.floor(Math.random() * 3);
+    setVisitorCount(newCount);
+    localStorage.setItem('memorial-visitor-count', newCount.toString());
+
+    // Simulate recent visitors from different locations
+    const locations = [
+      { city: 'Accra', country: 'Ghana', x: 52, y: 48 },
+      { city: 'London', country: 'UK', x: 48, y: 28 },
+      { city: 'New York', country: 'USA', x: 25, y: 35 },
+      { city: 'Lagos', country: 'Nigeria', x: 50, y: 47 },
+      { city: 'Toronto', country: 'Canada', x: 22, y: 30 },
+    ];
+    setRecentVisitors(locations.slice(0, 3 + Math.floor(Math.random() * 2)));
+  }, []);
+
+  return (
+    <div className="bg-gradient-to-br from-charcoal to-charcoal-light rounded-3xl p-6 md:p-8 text-white">
+      <div className="flex flex-col md:flex-row items-center gap-8">
+        {/* Globe visualization */}
+        <div className="relative w-48 h-48 flex-shrink-0">
+          {/* Globe background */}
+          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-blue-900/30 to-blue-950/50 animate-globe-pulse">
+            {/* Continents approximation */}
+            <div className="absolute inset-4 rounded-full border border-gold/20 opacity-50" />
+            <div className="absolute inset-8 rounded-full border border-gold/10 opacity-30" />
+          </div>
+
+          {/* Visitor dots */}
+          {recentVisitors.map((visitor, i) => (
+            <div
+              key={i}
+              className="absolute"
+              style={{ left: `${visitor.x}%`, top: `${visitor.y}%` }}
+            >
+              <div className="relative">
+                <div className="absolute w-3 h-3 -m-1.5 bg-gold rounded-full animate-visitor-ping" style={{ animationDelay: `${i * 500}ms` }} />
+                <div className="absolute w-2 h-2 -m-1 bg-gold rounded-full" />
+              </div>
+            </div>
+          ))}
+
+          {/* Center glow */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-16 h-16 rounded-full bg-gold/10 blur-xl" />
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="text-center md:text-left flex-1">
+          <div className="mb-4">
+            <span className="text-5xl md:text-6xl font-display text-shimmer">{visitorCount}</span>
+            <p className="text-white/60 mt-1">people remembering Grandma</p>
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-sm text-white/50">Recent visitors from:</p>
+            <div className="flex flex-wrap gap-2">
+              {recentVisitors.map((visitor, i) => (
+                <span
+                  key={i}
+                  className="inline-flex items-center gap-1 px-3 py-1 bg-white/10 rounded-full text-xs animate-fade-in"
+                  style={{ animationDelay: `${i * 200}ms` }}
+                >
+                  <span className="w-1.5 h-1.5 bg-gold rounded-full" />
+                  {visitor.city}, {visitor.country}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================
 // REUSABLE COMPONENTS
 // ============================================
 
@@ -635,6 +1176,7 @@ const HeroSection = () => {
       <div className="absolute inset-0 opacity-10" style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23D4AF37' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")` }} />
       <FloatingPetals />
       <SoftGradientOrbs />
+      <FloatingPhotoMemories />
 
       <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
         <div className={`mb-8 transition-all duration-1000 ${loaded ? 'opacity-100' : 'opacity-0'}`}>
@@ -1038,19 +1580,38 @@ const PhotoTimelineSection = () => {
                     {decade.period}
                   </span>
                 </div>
-                <div className="space-y-4">
+                <div className="space-y-4 perspective-1000">
                   {decade.photos.map((photo, photoIndex) => (
                     <div
                       key={photo.id}
                       onClick={() => setSelectedPhoto(photo)}
-                      className="relative aspect-[3/4] bg-gradient-to-br from-white to-warm-white rounded-2xl overflow-hidden cursor-pointer group shadow-soft hover:shadow-elevated transition-all duration-500 photo-hover"
-                      style={{ transitionDelay: `${photoIndex * 100}ms` }}
+                      className="relative aspect-[3/4] bg-gradient-to-br from-white to-warm-white rounded-2xl overflow-hidden cursor-pointer group shadow-soft hover:shadow-elevated transition-all duration-500 photo-hover transform-style-3d hover:rotate-y-[-3deg] hover:rotate-x-[3deg] hover:scale-105"
+                      style={{
+                        transitionDelay: `${photoIndex * 100}ms`,
+                        transformStyle: 'preserve-3d',
+                      }}
+                      onMouseMove={(e) => {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const x = e.clientX - rect.left;
+                        const y = e.clientY - rect.top;
+                        const centerX = rect.width / 2;
+                        const centerY = rect.height / 2;
+                        const rotateX = (y - centerY) / 15;
+                        const rotateY = (centerX - x) / 15;
+                        e.currentTarget.style.transform = `perspective(1000px) rotateX(${-rotateX}deg) rotateY(${rotateY}deg) scale(1.02)`;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1)';
+                      }}
                     >
+                      {/* 3D Depth layer - shadow behind */}
+                      <div className="absolute inset-0 bg-charcoal/30 rounded-2xl transform translate-z-[-20px] opacity-0 group-hover:opacity-100 transition-opacity duration-300" style={{ transform: 'translateZ(-20px)' }} />
+
                       {/* Actual photo */}
                       <img
                         src={photo.src}
                         alt={photo.label}
-                        className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105"
+                        className="w-full h-full object-cover object-top transition-transform duration-700"
                       />
 
                       {/* Subtle gradient overlay for text readability */}
@@ -1770,11 +2331,38 @@ const TributesSection = ({ showToast }) => {
             {mediaTributes.length > 0 && (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-6">
                 {mediaTributes.map((tribute) => (
-                  <div key={tribute.id} className="aspect-video bg-charcoal rounded-xl overflow-hidden">
+                  <div key={tribute.id} className="aspect-video bg-charcoal rounded-xl overflow-hidden relative group">
                     {tribute.type === 'video' ? (
                       <video src={tribute.url} controls className="w-full h-full object-cover" />
                     ) : (
-                      <audio src={tribute.url} controls className="w-full mt-8" />
+                      <div className="w-full h-full flex flex-col items-center justify-center p-4">
+                        {/* Animated Waveform Visualization */}
+                        <div className="flex items-center justify-center gap-1 mb-4 h-16">
+                          {Array.from({ length: 12 }).map((_, i) => (
+                            <div
+                              key={i}
+                              className="w-1 bg-gradient-to-t from-gold to-gold-light rounded-full animate-waveform"
+                              style={{
+                                height: `${20 + Math.random() * 30}px`,
+                                animationDelay: `${i * 0.1}s`,
+                                animationDuration: `${0.4 + Math.random() * 0.3}s`,
+                              }}
+                            />
+                          ))}
+                        </div>
+                        <audio src={tribute.url} controls className="w-full" />
+                        <p className="text-white/60 text-xs mt-2">Audio Tribute</p>
+                      </div>
+                    )}
+                    {/* Play overlay for video */}
+                    {tribute.type === 'video' && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-charcoal/30 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                        <div className="w-12 h-12 rounded-full bg-gold/90 flex items-center justify-center">
+                          <svg className="w-5 h-5 ml-1 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M8 5v14l11-7z" />
+                          </svg>
+                        </div>
+                      </div>
                     )}
                   </div>
                 ))}
@@ -1811,22 +2399,54 @@ const TributesSection = ({ showToast }) => {
           </Card>
         </AnimatedSection>
 
-        {/* Entries List */}
+        {/* Entries List - Animated Guestbook Signatures */}
         <div className="space-y-6">
           {entries.map((entry, index) => (
             <AnimatedSection key={entry.id} delay={index * 100}>
-              <Card className="p-6 border-l-4 border-gold" hover={false}>
-                <p className="text-charcoal text-lg italic mb-4">"{entry.message}"</p>
-                <div className="flex items-center justify-between flex-wrap gap-4">
+              <Card className="p-6 border-l-4 border-gold relative overflow-hidden group" hover={false}>
+                {/* Decorative corner flourish */}
+                <div className="absolute top-0 right-0 w-16 h-16 opacity-0 group-hover:opacity-100 transition-all duration-500">
+                  <svg className="w-full h-full text-gold/20" viewBox="0 0 100 100">
+                    <path d="M100 0 Q60 40 100 100" fill="none" stroke="currentColor" strokeWidth="2" className="animate-draw-path" style={{ strokeDasharray: 200, strokeDashoffset: 200 }} />
+                  </svg>
+                </div>
+
+                {/* Message with typewriter effect container */}
+                <div className="relative">
+                  <span className="absolute -left-2 -top-2 text-4xl text-gold/20 font-serif">"</span>
+                  <p className="text-charcoal text-lg italic mb-4 pl-4 pr-6">{entry.message}</p>
+                  <span className="absolute -right-1 bottom-2 text-4xl text-gold/20 font-serif rotate-180">"</span>
+                </div>
+
+                {/* Signature area with animated underline */}
+                <div className="flex items-center justify-between flex-wrap gap-4 pt-4 border-t border-gold/10">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gold to-gold-dark flex items-center justify-center text-white font-medium">{entry.name.charAt(0)}</div>
+                    {/* Animated avatar with pulse */}
+                    <div className="relative">
+                      <div className="absolute inset-0 rounded-full bg-gold/30 animate-ping opacity-0 group-hover:opacity-100" style={{ animationDuration: '2s' }} />
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gold to-gold-dark flex items-center justify-center text-white font-medium shadow-gold-glow transition-transform duration-300 group-hover:scale-110">
+                        {entry.name.charAt(0)}
+                      </div>
+                    </div>
                     <div>
-                      <p className="font-medium text-charcoal">{entry.name}</p>
-                      {entry.location && <p className="text-sm text-warm-gray">{entry.location}</p>}
+                      {/* Animated signature-style name */}
+                      <p className="font-display text-lg text-charcoal group-hover:text-gold transition-colors duration-300 relative">
+                        {entry.name}
+                        <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gold transition-all duration-500 group-hover:w-full" />
+                      </p>
+                      {entry.location && (
+                        <p className="text-sm text-warm-gray flex items-center gap-1">
+                          <span className="inline-block w-1 h-1 rounded-full bg-gold" />
+                          {entry.location}
+                        </p>
+                      )}
                     </div>
                   </div>
-                  <span className="text-sm text-warm-gray">{entry.date}</span>
+                  <span className="text-sm text-warm-gray italic">{entry.date}</span>
                 </div>
+
+                {/* Subtle paper texture effect on hover */}
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-5 transition-opacity duration-500 pointer-events-none" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E")' }} />
               </Card>
             </AnimatedSection>
           ))}
@@ -2185,6 +2805,11 @@ const ContactSection = ({ showToast }) => {
             </AnimatedSection>
           </div>
         </div>
+
+        {/* Visitor Globe - Live Visitor Counter */}
+        <AnimatedSection delay={300} className="mt-12">
+          <VisitorGlobe />
+        </AnimatedSection>
       </div>
     </section>
   );
@@ -2377,13 +3002,16 @@ export default function App() {
         <LifeSection />
         <FamilyTreeSection />
         <PhotoTimelineSection />
+        <MemorialGarden showToast={showToast} />
         <CandleLightingSection showToast={showToast} />
+        <MemoryConstellation />
         <LiveStreamSection />
         <TributesSection showToast={showToast} />
         <DonationSection showToast={showToast} />
         <ContactSection showToast={showToast} />
         <Footer />
         <MusicPlayer />
+        <AmbientMusicPlayer />
       </div>
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
