@@ -379,7 +379,7 @@ const GoldenRainParticles = ({ intensity = 'medium' }) => {
 // ============================================
 
 const AmbientMusicPlayer = () => {
-  const [isExpanded, setIsExpanded] = useState(true); // Start expanded
+  const [isExpanded, setIsExpanded] = useState(false); // Start collapsed after unmute
   const [isMuted, setIsMuted] = useState(true); // Start muted (allows autoplay)
   const [showUnmutePrompt, setShowUnmutePrompt] = useState(true);
 
@@ -398,16 +398,16 @@ const AmbientMusicPlayer = () => {
             setShowUnmutePrompt(false);
           }}
         >
-          <div className="bg-gradient-to-br from-burgundy-dark to-burgundy p-8 rounded-2xl shadow-2xl border border-gold/30 text-center max-w-sm mx-4 animate-fade-in">
-            <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gold/20 flex items-center justify-center">
-              <svg className="w-10 h-10 text-gold" fill="currentColor" viewBox="0 0 24 24">
+          <div className="bg-gradient-to-br from-burgundy-dark to-burgundy p-6 sm:p-8 rounded-2xl shadow-2xl border border-gold/30 text-center max-w-xs sm:max-w-sm mx-4 animate-fade-in">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-3 sm:mb-4 rounded-full bg-gold/20 flex items-center justify-center">
+              <svg className="w-8 h-8 sm:w-10 sm:h-10 text-gold" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
               </svg>
             </div>
-            <h3 className="text-xl font-serif text-gold mb-2">Memorial Hymns</h3>
-            <p className="text-white/70 mb-6">Tap anywhere to enable sound and listen to beautiful hymns in memory of Grandma</p>
+            <h3 className="text-lg sm:text-xl font-serif text-gold mb-2">Memorial Hymns</h3>
+            <p className="text-white/70 text-sm mb-4 sm:mb-6">Tap to listen to beautiful hymns in memory of Grandma</p>
             <button
-              className="px-8 py-3 bg-gold text-white rounded-full font-medium hover:bg-gold-dark transition-colors"
+              className="px-6 sm:px-8 py-2.5 sm:py-3 bg-gold text-white rounded-full font-medium hover:bg-gold-dark transition-colors text-sm sm:text-base"
               onClick={(e) => {
                 e.stopPropagation();
                 setIsMuted(false);
@@ -416,56 +416,78 @@ const AmbientMusicPlayer = () => {
             >
               Enable Sound
             </button>
-            <p className="text-white/40 text-xs mt-4">Or tap anywhere to continue</p>
+            <p className="text-white/40 text-xs mt-3 sm:mt-4">Or tap anywhere to skip</p>
           </div>
         </div>
       )}
 
-      {/* Music Player Widget */}
-      <div className={`fixed bottom-6 left-6 z-40 transition-all duration-500 ${isExpanded ? 'w-80' : 'w-auto'}`}>
-        <div className="music-player-mini rounded-2xl shadow-2xl border border-gold/20 overflow-hidden">
-          {/* Mini View */}
-          <div className="flex items-center p-3 gap-3">
+      {/* Compact Music Player Widget */}
+      <div className={`fixed bottom-4 left-4 z-40 transition-all duration-300 ease-out ${isExpanded ? 'w-64 sm:w-72' : 'w-auto'}`}>
+        <div className="music-player-mini rounded-xl shadow-lg border border-gold/20 overflow-hidden backdrop-blur-md">
+          {/* Collapsed Mini View - Always visible */}
+          <div className="flex items-center p-2 gap-2">
+            {/* Sound Toggle Button */}
             <button
               onClick={() => {
                 if (isMuted) {
                   setIsMuted(false);
                   setShowUnmutePrompt(false);
+                } else {
+                  setIsMuted(true);
                 }
-                setIsExpanded(true);
               }}
-              className="w-10 h-10 flex items-center justify-center rounded-full bg-gold text-white hover:bg-gold-dark transition-colors flex-shrink-0"
+              className="w-8 h-8 flex items-center justify-center rounded-full bg-gold text-white hover:bg-gold-dark transition-colors flex-shrink-0"
+              title={isMuted ? 'Unmute' : 'Mute'}
             >
               {isMuted ? (
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
               ) : (
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
               )}
             </button>
 
-            <div className="flex-1 min-w-0">
-              <p className="text-white/60 text-xs">{isMuted ? '♪ Tap for sound' : '♪ Now Playing'}</p>
+            {/* Animated Equalizer / Status */}
+            <div className="flex items-center gap-1.5 flex-1 min-w-0">
+              {!isMuted ? (
+                <div className="flex items-end gap-0.5 h-4">
+                  {[...Array(4)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="w-0.5 bg-gold rounded-full animate-equalizer"
+                      style={{
+                        animationDelay: `${i * 0.15}s`,
+                        height: '3px'
+                      }}
+                    />
+                  ))}
+                </div>
+              ) : null}
+              <p className="text-white/70 text-xs truncate">
+                {isMuted ? 'Sound off' : 'Hymns'}
+              </p>
             </div>
 
+            {/* Expand/Collapse Button */}
             <button
               onClick={() => setIsExpanded(!isExpanded)}
-              className="text-white/60 hover:text-white transition-colors flex-shrink-0"
+              className="w-6 h-6 flex items-center justify-center text-white/50 hover:text-white transition-colors flex-shrink-0"
+              title={isExpanded ? 'Collapse' : 'Expand'}
             >
-              <svg className={`w-5 h-5 transition-transform ${isExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              <svg className={`w-4 h-4 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
               </svg>
             </button>
           </div>
 
-          {/* Expanded View with YouTube Player */}
-          {isExpanded && (
-            <div className="px-3 pb-3 border-t border-white/10">
-              <div className="py-3">
-                <p className="text-white font-medium text-sm truncate">{MUSIC_CONFIG.title}</p>
-                <p className="text-white/50 text-xs">{MUSIC_CONFIG.artist}</p>
+          {/* Expanded View - Video Player */}
+          <div className={`overflow-hidden transition-all duration-300 ease-out ${isExpanded ? 'max-h-48 opacity-100' : 'max-h-0 opacity-0'}`}>
+            <div className="px-2 pb-2 border-t border-white/10">
+              <div className="py-2">
+                <p className="text-white font-medium text-xs truncate">{MUSIC_CONFIG.title}</p>
+                <p className="text-white/50 text-[10px]">{MUSIC_CONFIG.artist}</p>
               </div>
 
-              <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-black">
+              <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-black/50">
                 <iframe
                   key={isMuted ? 'muted' : 'unmuted'}
                   width="100%"
@@ -478,27 +500,21 @@ const AmbientMusicPlayer = () => {
                   className="absolute inset-0"
                 />
               </div>
-
-              {isMuted && (
-                <button
-                  onClick={() => {
-                    setIsMuted(false);
-                    setShowUnmutePrompt(false);
-                  }}
-                  className="w-full mt-3 py-2 bg-gold/20 hover:bg-gold/30 border border-gold/30 rounded-lg text-gold text-sm font-medium transition-colors flex items-center justify-center gap-2"
-                >
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
-                  Enable Sound
-                </button>
-              )}
-
-              <p className="text-white/40 text-xs text-center mt-3">
-                Beautiful hymns for reflection
-              </p>
             </div>
-          )}
+          </div>
         </div>
       </div>
+
+      {/* Hidden iframe for audio-only playback when collapsed */}
+      {!isExpanded && (
+        <iframe
+          key={`hidden-${isMuted ? 'muted' : 'unmuted'}`}
+          src={youtubeUrl}
+          title="Memorial Hymns Audio"
+          className="hidden"
+          allow="autoplay"
+        />
+      )}
     </>
   );
 };
