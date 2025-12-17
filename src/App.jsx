@@ -1113,20 +1113,12 @@ const PhotoTimelineSection = () => {
 // CANDLE LIGHTING SECTION
 // ============================================
 
-// Formspree endpoint for candles (create one at formspree.io)
+// Formspree endpoint for candles (backup/notification)
 const FORMSPREE_CANDLES = 'https://formspree.io/f/xwpkgjkq';
 
-// Initial memorial candles that everyone sees
-const INITIAL_CANDLES = [
-  { id: 1, name: 'The Family', litAt: '2025-01-01T00:00:00Z' },
-  { id: 2, name: 'John Marion K. Hodges', litAt: '2025-01-02T00:00:00Z' },
-  { id: 3, name: 'Osborn M.D.K. Hodges', litAt: '2025-01-02T00:00:00Z' },
-  { id: 4, name: 'Ria Hodges', litAt: '2025-01-03T00:00:00Z' },
-  { id: 5, name: 'Gayle Hodges', litAt: '2025-01-03T00:00:00Z' },
-  { id: 6, name: 'With Love & Prayers', litAt: '2025-01-04T00:00:00Z' },
-  { id: 7, name: 'Forever Remembered', litAt: '2025-01-04T00:00:00Z' },
-  { id: 8, name: 'Rest In Peace', litAt: '2025-01-05T00:00:00Z' },
-];
+// JSONBlob for TRUE global candle storage - visible to ALL visitors on ANY device
+const JSONBLOB_ID = '019b2c8e-e7a6-786d-b902-1712058e6bb2';
+const JSONBLOB_URL = `https://jsonblob.com/api/jsonBlob/${JSONBLOB_ID}`;
 
 // Animated Candle Component - Now with dynamic sizing
 const AnimatedCandle = ({ candle, index, isNew, size = 'normal' }) => {
@@ -1251,32 +1243,46 @@ const CandleLightingSection = ({ showToast }) => {
     return 'grid-cols-8 sm:grid-cols-12 md:grid-cols-16';
   };
 
-  // Load candles - combine initial candles with user-added ones from localStorage
+  // Fetch candles from JSONBlob - TRUE global storage visible to ALL visitors
   useEffect(() => {
-    const loadCandles = () => {
-      // Get user-added candles from localStorage
-      const savedUserCandles = localStorage.getItem('memorial-user-candles');
-      const userCandles = savedUserCandles ? JSON.parse(savedUserCandles) : [];
+    const fetchGlobalCandles = async () => {
+      try {
+        const response = await fetch(JSONBLOB_URL, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' }
+        });
 
-      // Combine initial candles with user-added candles
-      // User candles appear first (newest first), then initial candles
-      const allCandles = [...userCandles, ...INITIAL_CANDLES];
-      setCandles(allCandles);
-      setIsLoading(false);
-    };
-
-    loadCandles();
-
-    // Listen for changes from other tabs on same device
-    const handleStorageChange = (e) => {
-      if (e.key === 'memorial-user-candles') {
-        loadCandles();
+        if (response.ok) {
+          const data = await response.json();
+          if (data.candles && Array.isArray(data.candles)) {
+            setCandles(data.candles);
+          }
+        }
+      } catch (error) {
+        console.log('Failed to fetch global candles:', error);
+        // Fallback to localStorage cache
+        const cached = localStorage.getItem('memorial-candles-cache');
+        if (cached) {
+          setCandles(JSON.parse(cached));
+        }
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    fetchGlobalCandles();
+
+    // Poll for updates every 15 seconds to see new candles from other visitors
+    const pollInterval = setInterval(fetchGlobalCandles, 15000);
+    return () => clearInterval(pollInterval);
   }, []);
+
+  // Cache candles locally as backup
+  useEffect(() => {
+    if (candles.length > 0) {
+      localStorage.setItem('memorial-candles-cache', JSON.stringify(candles));
+    }
+  }, [candles]);
 
   const lightCandle = async (e) => {
     e.preventDefault();
@@ -1291,17 +1297,19 @@ const CandleLightingSection = ({ showToast }) => {
       litAt: new Date().toISOString()
     };
 
-    // Get existing user candles and add new one
-    const savedUserCandles = localStorage.getItem('memorial-user-candles');
-    const userCandles = savedUserCandles ? JSON.parse(savedUserCandles) : [];
-    const updatedUserCandles = [newCandle, ...userCandles];
+    // Create updated candles array (new candle first)
+    const updatedCandles = [newCandle, ...candles];
 
-    // Save to localStorage for persistence
-    localStorage.setItem('memorial-user-candles', JSON.stringify(updatedUserCandles));
-
-    // Submit to Formspree for permanent record and notifications
     try {
-      await fetch(FORMSPREE_CANDLES, {
+      // Save to JSONBlob for GLOBAL persistence - ALL visitors will see this
+      await fetch(JSONBLOB_URL, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ candles: updatedCandles })
+      });
+
+      // Also submit to Formspree for email notification
+      fetch(FORMSPREE_CANDLES, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1309,14 +1317,15 @@ const CandleLightingSection = ({ showToast }) => {
           litAt: newCandle.litAt,
           _subject: `🕯️ New candle lit by ${newCandle.name}`
         })
-      });
+      }).catch(() => {});
+
     } catch (error) {
-      console.log('Formspree submission failed, but candle saved locally');
+      console.log('Failed to save globally, but updating UI');
     }
 
     // Update UI with animation
     setTimeout(() => {
-      setCandles([newCandle, ...candles]);
+      setCandles(updatedCandles);
       setNewCandleId(newCandle.id);
       setName('');
       setIsSubmitting(false);
