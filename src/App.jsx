@@ -378,32 +378,43 @@ const GoldenRainParticles = ({ intensity = 'medium' }) => {
 const AmbientMusicPlayer = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [currentTrack, setCurrentTrack] = useState(0);
-  const [volume, setVolume] = useState(0.3);
+  const [volume, setVolume] = useState(0.5);
   const audioRef = useRef(null);
 
-  const tracks = [
-    { title: 'Amazing Grace', duration: '4:32' },
-    { title: 'How Great Thou Art', duration: '5:15' },
-    { title: 'Blessed Assurance', duration: '3:48' },
-  ];
+  // Use the same playlist as MusicPlayer
+  const currentTrack = MUSIC_PLAYLIST[0];
+  const hasMusic = currentTrack && currentTrack.url;
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume;
+    }
+  }, [volume]);
 
   const togglePlay = () => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-      } else {
-        audioRef.current.play().catch(() => {});
-      }
+    if (!audioRef.current || !hasMusic) return;
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.current.play()
+        .then(() => setIsPlaying(true))
+        .catch((err) => console.log('Audio play failed:', err));
     }
-    setIsPlaying(!isPlaying);
   };
 
-  const nextTrack = () => setCurrentTrack((prev) => (prev + 1) % tracks.length);
-  const prevTrack = () => setCurrentTrack((prev) => (prev - 1 + tracks.length) % tracks.length);
+  if (!hasMusic) return null;
 
   return (
     <div className={`fixed bottom-6 left-6 z-40 transition-all duration-500 ${isExpanded ? 'w-72' : 'w-14'}`}>
+      <audio
+        ref={audioRef}
+        src={currentTrack.url}
+        preload="auto"
+        onPlay={() => setIsPlaying(true)}
+        onPause={() => setIsPlaying(false)}
+        onEnded={() => setIsPlaying(false)}
+      />
       <div className="music-player-mini rounded-2xl shadow-2xl border border-gold/20 overflow-hidden">
         {/* Mini View */}
         <div className="flex items-center p-3 gap-3">
@@ -445,27 +456,21 @@ const AmbientMusicPlayer = () => {
         {isExpanded && (
           <div className="px-3 pb-3 border-t border-white/10">
             <div className="py-3">
-              <p className="text-white font-medium text-sm truncate">{tracks[currentTrack].title}</p>
-              <p className="text-white/50 text-xs">Memorial Hymns</p>
+              <p className="text-white font-medium text-sm truncate">{currentTrack.title}</p>
+              <p className="text-white/50 text-xs">{currentTrack.artist}</p>
             </div>
 
             {/* Controls */}
             <div className="flex items-center justify-center gap-4">
-              <button onClick={prevTrack} className="text-white/60 hover:text-white transition-colors">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h2v12H6V6zm3.5 6l8.5 6V6l-8.5 6z"/></svg>
-              </button>
               <button
                 onClick={togglePlay}
-                className="w-10 h-10 flex items-center justify-center rounded-full bg-gold text-white hover:bg-gold-dark transition-colors"
+                className="w-12 h-12 flex items-center justify-center rounded-full bg-gold text-white hover:bg-gold-dark transition-colors"
               >
                 {isPlaying ? (
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/></svg>
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/></svg>
                 ) : (
-                  <svg className="w-5 h-5 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                  <svg className="w-6 h-6 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                 )}
-              </button>
-              <button onClick={nextTrack} className="text-white/60 hover:text-white transition-colors">
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zm8.5-6V6l0 0v12l0 0V12zm2 0V6h2v12h-2V12z"/></svg>
               </button>
             </div>
 
@@ -479,16 +484,17 @@ const AmbientMusicPlayer = () => {
                 step="0.1"
                 value={volume}
                 onChange={(e) => {
-                  setVolume(parseFloat(e.target.value));
-                  if (audioRef.current) audioRef.current.volume = parseFloat(e.target.value);
+                  const newVol = parseFloat(e.target.value);
+                  setVolume(newVol);
+                  if (audioRef.current) audioRef.current.volume = newVol;
                 }}
                 className="flex-1 h-1 bg-white/20 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-gold [&::-webkit-slider-thumb]:rounded-full"
               />
+              <svg className="w-4 h-4 text-white/50" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
             </div>
           </div>
         )}
       </div>
-      <audio ref={audioRef} />
     </div>
   );
 };
@@ -3026,7 +3032,6 @@ export default function App() {
         <DonationSection showToast={showToast} />
         <ContactSection showToast={showToast} />
         <Footer />
-        <MusicPlayer />
         <AmbientMusicPlayer />
       </div>
 
