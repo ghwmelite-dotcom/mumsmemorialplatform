@@ -1,7 +1,0 @@
-# Serve static assets directly
-/audio/*  /audio/:splat  200
-/photos/*  /photos/:splat  200
-/icons/*  /icons/:splat  200
-
-# SPA fallback - must be last
-/*  /index.html  200
