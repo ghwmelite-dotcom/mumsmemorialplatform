@@ -1116,7 +1116,10 @@ const PhotoTimelineSection = () => {
 // Formspree endpoint for candles (backup/notification)
 const FORMSPREE_CANDLES = 'https://formspree.io/f/xwpkgjkq';
 
-// Default candles - always shown, stored in code for reliability
+// Cloudflare Worker API - GLOBAL candle storage (visible to ALL visitors)
+const CANDLES_API_URL = 'https://memorial-candles-api.ghwmelite.workers.dev';
+
+// Default candles - fallback if API fails
 const DEFAULT_CANDLES = [
   { id: 1, name: "The Family", litAt: "2025-01-01T00:00:00Z" },
   { id: 2, name: "John Marion K. Hodges", litAt: "2025-01-02T00:00:00Z" },
@@ -1225,17 +1228,15 @@ const FloatingEmber = ({ delay }) => {
 
 const CandleLightingSection = ({ showToast }) => {
   const { t } = useLanguage();
-  const [userCandles, setUserCandles] = useState([]);
+  const [candles, setCandles] = useState(DEFAULT_CANDLES);
   const [name, setName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [newCandleId, setNewCandleId] = useState(null);
   const [showLightingEffect, setShowLightingEffect] = useState(false);
+  const isSavingRef = useRef(false);
 
-  // Combine default candles with user-lit candles
-  // Default candles are ALWAYS shown (hardcoded), user candles come from localStorage
-  const allCandles = [...userCandles, ...DEFAULT_CANDLES];
-
-  const { ref: countRef, count: animatedCount } = useCountUp(allCandles.length, 2000);
+  const { ref: countRef, count: animatedCount } = useCountUp(candles.length, 2000);
 
   // Determine candle size based on total count
   const getCandleSize = (totalCount) => {
@@ -1255,19 +1256,34 @@ const CandleLightingSection = ({ showToast }) => {
     return 'grid-cols-8 sm:grid-cols-12 md:grid-cols-16';
   };
 
-  // Load user candles from localStorage on mount
+  // Fetch candles from Cloudflare Worker API on mount
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('memorial-user-candles');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          setUserCandles(parsed);
+    const fetchCandles = async () => {
+      try {
+        const response = await fetch(CANDLES_API_URL);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.candles && Array.isArray(data.candles)) {
+            setCandles(data.candles);
+          }
         }
+      } catch (error) {
+        console.log('Using default candles:', error);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (e) {
-      console.log('Could not load saved candles');
-    }
+    };
+
+    fetchCandles();
+
+    // Poll for new candles every 30 seconds
+    const pollInterval = setInterval(() => {
+      if (!isSavingRef.current) {
+        fetchCandles();
+      }
+    }, 30000);
+
+    return () => clearInterval(pollInterval);
   }, []);
 
   const lightCandle = async (e) => {
@@ -1276,6 +1292,7 @@ const CandleLightingSection = ({ showToast }) => {
 
     setIsSubmitting(true);
     setShowLightingEffect(true);
+    isSavingRef.current = true;
 
     const newCandle = {
       id: Date.now(),
@@ -1283,35 +1300,53 @@ const CandleLightingSection = ({ showToast }) => {
       litAt: new Date().toISOString()
     };
 
-    // Update state and localStorage
-    const updatedUserCandles = [newCandle, ...userCandles];
-    setUserCandles(updatedUserCandles);
+    // Add new candle to the list (at the beginning)
+    const updatedCandles = [newCandle, ...candles];
+    setCandles(updatedCandles);
     setNewCandleId(newCandle.id);
-    localStorage.setItem('memorial-user-candles', JSON.stringify(updatedUserCandles));
 
-    // Send email notification via Formspree (fire and forget)
-    fetch(FORMSPREE_CANDLES, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: newCandle.name,
-        litAt: newCandle.litAt,
-        _subject: `🕯️ New candle lit by ${newCandle.name}`
-      })
-    }).catch(() => {});
+    try {
+      // Save to Cloudflare Worker API (global storage)
+      const response = await fetch(CANDLES_API_URL, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ candles: updatedCandles })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save');
+      }
+
+      console.log('Candle saved globally!');
+
+      // Also send email notification via Formspree
+      fetch(FORMSPREE_CANDLES, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newCandle.name,
+          litAt: newCandle.litAt,
+          _subject: `🕯️ New candle lit by ${newCandle.name}`
+        })
+      }).catch(() => {});
+
+    } catch (error) {
+      console.error('Failed to save candle:', error);
+    }
 
     // Complete the UI animation
     setTimeout(() => {
       setName('');
       setIsSubmitting(false);
       setShowLightingEffect(false);
+      isSavingRef.current = false;
       showToast(t('candles.thankYou'), 'success');
       setTimeout(() => setNewCandleId(null), 2000);
     }, 1500);
   };
 
-  const candleSize = getCandleSize(allCandles.length);
-  const gridCols = getGridCols(allCandles.length);
+  const candleSize = getCandleSize(candles.length);
+  const gridCols = getGridCols(candles.length);
 
   return (
     <section id="candles" className="py-24 md:py-32 bg-gradient-to-b from-charcoal via-[#1a1520] to-charcoal-light text-white relative overflow-hidden">
@@ -1467,25 +1502,34 @@ const CandleLightingSection = ({ showToast }) => {
 
         {/* Candles Grid - Dynamic sizing based on count */}
         <AnimatedSection delay={400}>
-          <div className={`grid ${gridCols} gap-4 md:gap-6 transition-all duration-500`}>
-            {allCandles.slice(0, 100).map((candle, index) => (
-              <AnimatedCandle
-                key={candle.id}
-                candle={candle}
-                index={index}
-                isNew={candle.id === newCandleId}
-                size={candleSize}
-              />
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="flex flex-col items-center gap-4">
+                <div className="w-12 h-12 border-4 border-gold/30 border-t-gold rounded-full animate-spin" />
+                <p className="text-white/50">Loading candles...</p>
+              </div>
+            </div>
+          ) : (
+            <div className={`grid ${gridCols} gap-4 md:gap-6 transition-all duration-500`}>
+              {candles.slice(0, 100).map((candle, index) => (
+                <AnimatedCandle
+                  key={candle.id}
+                  candle={candle}
+                  index={index}
+                  isNew={candle.id === newCandleId}
+                  size={candleSize}
+                />
+              ))}
+            </div>
+          )}
         </AnimatedSection>
 
-        {allCandles.length > 100 && (
+        {candles.length > 100 && (
           <AnimatedSection delay={500}>
             <div className="text-center mt-12">
               <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-white/5 border border-white/10">
                 <span className="text-2xl">✨</span>
-                <p className="text-white/50">+{allCandles.length - 100} more candles glowing in her memory</p>
+                <p className="text-white/50">+{candles.length - 100} more candles glowing in her memory</p>
                 <span className="text-2xl">✨</span>
               </div>
             </div>
