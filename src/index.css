@@ -277,6 +277,137 @@
   animation: candle-flicker 0.8s ease-in-out infinite;
 }
 
+/* Enhanced candle flicker variations */
+@keyframes candle-flicker-alt {
+  0%, 100% {
+    transform: translateX(-50%) scale(1, 1) rotate(0deg);
+    opacity: 0.95;
+  }
+  20% {
+    transform: translateX(-50%) scale(1.08, 0.92) rotate(3deg);
+    opacity: 0.9;
+  }
+  40% {
+    transform: translateX(-50%) scale(0.92, 1.08) rotate(-2deg);
+    opacity: 1;
+  }
+  60% {
+    transform: translateX(-50%) scale(1.05, 0.95) rotate(1deg);
+    opacity: 0.88;
+  }
+  80% {
+    transform: translateX(-50%) scale(0.98, 1.02) rotate(-1deg);
+    opacity: 0.95;
+  }
+}
+
+.animate-candle-flicker-alt {
+  animation: candle-flicker-alt 0.6s ease-in-out infinite;
+}
+
+@keyframes candle-flicker-fast {
+  0%, 100% {
+    transform: translateX(-50%) scale(1, 1);
+    opacity: 1;
+  }
+  33% {
+    transform: translateX(-50%) scale(1.1, 0.9) rotate(2deg);
+    opacity: 0.9;
+  }
+  66% {
+    transform: translateX(-50%) scale(0.9, 1.1) rotate(-2deg);
+    opacity: 1;
+  }
+}
+
+.animate-candle-flicker-fast {
+  animation: candle-flicker-fast 0.4s ease-in-out infinite;
+}
+
+/* Floating ember animation */
+@keyframes float-ember {
+  0% {
+    transform: translateY(0) translateX(0) scale(1);
+    opacity: 1;
+  }
+  25% {
+    transform: translateY(-50vh) translateX(20px) scale(0.9);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translateY(-70vh) translateX(-10px) scale(0.7);
+    opacity: 0.6;
+  }
+  75% {
+    transform: translateY(-85vh) translateX(15px) scale(0.4);
+    opacity: 0.3;
+  }
+  100% {
+    transform: translateY(-100vh) translateX(0) scale(0.2);
+    opacity: 0;
+  }
+}
+
+.animate-float-ember {
+  animation: float-ember 5s ease-out infinite;
+}
+
+/* Candle appear animation */
+@keyframes candle-appear {
+  0% {
+    transform: scale(0) translateY(20px);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2) translateY(-10px);
+    opacity: 1;
+  }
+  75% {
+    transform: scale(0.9) translateY(5px);
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-candle-appear {
+  animation: candle-appear 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* Flash effect for lighting candle */
+@keyframes flash {
+  0% {
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.animate-flash {
+  animation: flash 0.5s ease-out forwards;
+}
+
+/* Fade in animation */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in-up 0.3s ease-out forwards;
+}
+
 /* ============================================
    PREMIUM SECTION ANIMATIONS
    ============================================ */

@@ -1113,103 +1113,363 @@ const PhotoTimelineSection = () => {
 // CANDLE LIGHTING SECTION
 // ============================================
 
+// Formspree endpoint for candles (create one at formspree.io)
+const FORMSPREE_CANDLES = 'https://formspree.io/f/xwpkgjkq';
+
+// Animated Candle Component
+const AnimatedCandle = ({ candle, index, isNew }) => {
+  const [isHovered, setIsHovered] = useState(false);
+
+  return (
+    <div
+      className={`text-center group cursor-pointer transform transition-all duration-700 ${isNew ? 'animate-candle-appear' : ''}`}
+      style={{ animationDelay: `${index * 50}ms` }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <div className="relative mx-auto w-12 h-20">
+        {/* Outer glow - large ambient */}
+        <div className={`absolute -top-10 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full blur-2xl transition-all duration-500 ${isHovered ? 'bg-gold/50 scale-150' : 'bg-gold/20'}`} />
+
+        {/* Middle glow - medium */}
+        <div className={`absolute -top-8 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full blur-xl transition-all duration-300 ${isHovered ? 'bg-orange-400/60' : 'bg-orange-400/30'}`} />
+
+        {/* Inner glow - intense */}
+        <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-6 h-6 bg-yellow-300/50 rounded-full blur-md animate-pulse" style={{ animationDuration: '1.5s' }} />
+
+        {/* Flame outer */}
+        <div className="absolute -top-8 left-1/2 -translate-x-1/2 w-4 h-7 bg-gradient-to-t from-orange-500 via-orange-400 to-yellow-300 rounded-full animate-candle-flicker opacity-90 blur-[1px]" />
+
+        {/* Flame middle */}
+        <div className="absolute -top-7 left-1/2 -translate-x-1/2 w-3 h-6 bg-gradient-to-t from-orange-400 via-yellow-400 to-yellow-200 rounded-full animate-candle-flicker-alt opacity-95" />
+
+        {/* Flame core */}
+        <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-2 h-4 bg-gradient-to-t from-yellow-300 via-yellow-100 to-white rounded-full animate-candle-flicker-fast" />
+
+        {/* Flame tip - white hot */}
+        <div className="absolute -top-5 left-1/2 -translate-x-1/2 w-1 h-2 bg-white rounded-full opacity-90 animate-candle-flicker-fast" />
+
+        {/* Wick */}
+        <div className="absolute top-1 left-1/2 -translate-x-1/2 w-0.5 h-2 bg-charcoal rounded-full" />
+
+        {/* Candle body - wax drips effect */}
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 w-6 h-14 bg-gradient-to-b from-cream via-warm-white to-cream/90 rounded-t-sm rounded-b-lg shadow-lg overflow-hidden">
+          {/* Wax drip 1 */}
+          <div className="absolute -top-1 left-0 w-2 h-4 bg-cream/80 rounded-full" />
+          {/* Wax drip 2 */}
+          <div className="absolute -top-0.5 right-0 w-1.5 h-3 bg-cream/70 rounded-full" />
+          {/* Subtle shimmer */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" />
+        </div>
+
+        {/* Candle base/holder */}
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-2 bg-gradient-to-b from-gold to-gold-dark rounded-sm shadow-md" />
+
+        {/* Reflection on surface */}
+        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-10 h-3 bg-gold/10 rounded-full blur-md" />
+      </div>
+
+      {/* Name with elegant reveal */}
+      <div className={`mt-4 transition-all duration-500 ${isHovered ? 'transform -translate-y-1' : ''}`}>
+        <p className={`text-sm font-medium truncate transition-all duration-300 ${isHovered ? 'text-gold' : 'text-white/70'}`}>
+          {candle.name}
+        </p>
+        {isHovered && candle.litAt && (
+          <p className="text-xs text-white/40 mt-1 animate-fade-in">
+            {new Date(candle.litAt).toLocaleDateString()}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Floating Ember Particle
+const FloatingEmber = ({ delay }) => {
+  const randomX = Math.random() * 100;
+  const randomDuration = 3 + Math.random() * 4;
+  const randomSize = 2 + Math.random() * 4;
+
+  return (
+    <div
+      className="absolute w-1 h-1 rounded-full animate-float-ember pointer-events-none"
+      style={{
+        left: `${randomX}%`,
+        bottom: '20%',
+        width: `${randomSize}px`,
+        height: `${randomSize}px`,
+        background: `radial-gradient(circle, rgba(255,200,100,1) 0%, rgba(255,150,50,0.8) 50%, rgba(255,100,0,0) 100%)`,
+        animationDelay: `${delay}s`,
+        animationDuration: `${randomDuration}s`,
+        filter: 'blur(0.5px)',
+        boxShadow: '0 0 6px rgba(255,180,50,0.8)'
+      }}
+    />
+  );
+};
+
 const CandleLightingSection = ({ showToast }) => {
   const { t } = useLanguage();
-  const [candles, setCandles] = useState(() => {
-    const saved = localStorage.getItem('memorial-candles');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [candles, setCandles] = useState([]);
   const [name, setName] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [newCandleId, setNewCandleId] = useState(null);
+  const [showLightingEffect, setShowLightingEffect] = useState(false);
   const { ref: countRef, count: animatedCount } = useCountUp(candles.length, 2000);
 
+  // Load candles from localStorage on mount (shared across all visitors via localStorage sync concept)
+  // In production, this would fetch from a real database
   useEffect(() => {
-    localStorage.setItem('memorial-candles', JSON.stringify(candles));
+    const saved = localStorage.getItem('memorial-candles-shared');
+    if (saved) {
+      setCandles(JSON.parse(saved));
+    } else {
+      // Initialize with some memorial candles
+      const initialCandles = [
+        { id: 1, name: 'The Family', litAt: '2025-01-01T00:00:00Z' },
+        { id: 2, name: 'With Love', litAt: '2025-01-01T00:00:00Z' },
+        { id: 3, name: 'Forever Remembered', litAt: '2025-01-01T00:00:00Z' },
+      ];
+      setCandles(initialCandles);
+      localStorage.setItem('memorial-candles-shared', JSON.stringify(initialCandles));
+    }
+  }, []);
+
+  // Sync candles to localStorage whenever they change
+  useEffect(() => {
+    if (candles.length > 0) {
+      localStorage.setItem('memorial-candles-shared', JSON.stringify(candles));
+    }
   }, [candles]);
 
-  const lightCandle = (e) => {
+  const lightCandle = async (e) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim() || isSubmitting) return;
 
-    const newCandle = { id: Date.now(), name: name.trim(), litAt: new Date().toISOString() };
-    setCandles(prev => [newCandle, ...prev]);
-    setName('');
-    showToast(t('candles.thankYou'), 'success');
+    setIsSubmitting(true);
+    setShowLightingEffect(true);
+
+    const newCandle = {
+      id: Date.now(),
+      name: name.trim(),
+      litAt: new Date().toISOString()
+    };
+
+    try {
+      // Submit to Formspree for permanent record
+      await fetch(FORMSPREE_CANDLES, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newCandle.name,
+          litAt: newCandle.litAt,
+          _subject: `🕯️ New candle lit by ${newCandle.name}`
+        })
+      });
+    } catch (error) {
+      console.log('Formspree submission failed, but candle still added locally');
+    }
+
+    // Add to local state with animation
+    setTimeout(() => {
+      setCandles(prev => [newCandle, ...prev]);
+      setNewCandleId(newCandle.id);
+      setName('');
+      setIsSubmitting(false);
+      setShowLightingEffect(false);
+      showToast(t('candles.thankYou'), 'success');
+
+      // Clear the "new" animation flag after animation completes
+      setTimeout(() => setNewCandleId(null), 2000);
+    }, 1500);
   };
 
   return (
-    <section id="candles" className="py-24 md:py-32 bg-gradient-to-b from-charcoal to-charcoal-light text-white relative overflow-hidden">
-      {/* Animated starry background */}
+    <section id="candles" className="py-24 md:py-32 bg-gradient-to-b from-charcoal via-[#1a1520] to-charcoal-light text-white relative overflow-hidden">
+      {/* Deep space gradient background */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-purple-900/20 via-transparent to-transparent" />
+
+      {/* Animated starry background - more stars with varying sizes */}
       <div className="absolute inset-0">
-        {Array.from({ length: 30 }).map((_, i) => (
+        {Array.from({ length: 80 }).map((_, i) => (
           <div
             key={i}
-            className="absolute w-1 h-1 bg-gold rounded-full animate-twinkle"
+            className="absolute rounded-full animate-twinkle"
             style={{
               left: `${Math.random() * 100}%`,
               top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 3}s`,
-              opacity: 0.3 + Math.random() * 0.4
+              width: `${1 + Math.random() * 2}px`,
+              height: `${1 + Math.random() * 2}px`,
+              background: i % 3 === 0 ? '#D4AF37' : i % 3 === 1 ? '#ffffff' : '#FFD700',
+              animationDelay: `${Math.random() * 5}s`,
+              animationDuration: `${2 + Math.random() * 3}s`,
+              opacity: 0.3 + Math.random() * 0.5,
+              boxShadow: `0 0 ${2 + Math.random() * 4}px currentColor`
             }}
           />
         ))}
       </div>
 
-      {/* Floating light orbs */}
-      <div className="absolute top-20 left-20 w-40 h-40 bg-gold/10 rounded-full blur-3xl animate-float-slow" />
-      <div className="absolute bottom-20 right-20 w-60 h-60 bg-gold/5 rounded-full blur-3xl animate-float-slow-reverse" />
+      {/* Floating embers */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {Array.from({ length: 15 }).map((_, i) => (
+          <FloatingEmber key={i} delay={i * 0.5} />
+        ))}
+      </div>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+      {/* Large ambient light orbs */}
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-gold/5 rounded-full blur-[100px] animate-pulse" style={{ animationDuration: '4s' }} />
+      <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-orange-500/5 rounded-full blur-[80px] animate-pulse" style={{ animationDuration: '5s', animationDelay: '1s' }} />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gold/3 rounded-full blur-[120px]" />
+
+      {/* Lighting effect overlay */}
+      {showLightingEffect && (
+        <div className="fixed inset-0 z-50 pointer-events-none">
+          <div className="absolute inset-0 bg-gold/20 animate-flash" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-white rounded-full blur-3xl animate-ping" />
+        </div>
+      )}
+
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative">
         <SectionHeading eyebrow={t('candles.eyebrow')} title={t('candles.title')} subtitle={t('candles.subtitle')} light />
 
-        {/* Light a Candle Form */}
+        {/* Central Feature Candle */}
         <AnimatedSection animation="zoom">
-          <div className="max-w-md mx-auto mb-16">
-            <form onSubmit={lightCandle} className="flex gap-3 group">
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder={t('candles.yourName')}
-                className="flex-1 px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/50 focus:border-gold focus:outline-none focus:bg-white/15 transition-all duration-300 input-animated"
-              />
-              <Button type="submit" className="whitespace-nowrap group-hover:shadow-gold-glow">{t('candles.lightCandle')}</Button>
-            </form>
-          </div>
-        </AnimatedSection>
+          <div className="flex justify-center mb-12">
+            <div className="relative">
+              {/* Massive glow for central candle */}
+              <div className="absolute -top-20 left-1/2 -translate-x-1/2 w-40 h-40 bg-gold/30 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '2s' }} />
+              <div className="absolute -top-16 left-1/2 -translate-x-1/2 w-28 h-28 bg-orange-400/40 rounded-full blur-2xl animate-pulse" style={{ animationDuration: '1.5s' }} />
 
-        {/* Animated Candle Count */}
-        <AnimatedSection delay={200} animation="zoom">
-          <div className="text-center mb-12" ref={countRef}>
-            <div className="relative inline-block">
-              <div className="absolute inset-0 bg-gold/20 blur-2xl rounded-full animate-glow-pulse" />
-              <span className="relative text-7xl font-display text-gold animate-gradient-text">{animatedCount}</span>
-            </div>
-            <p className="text-white/70 mt-4">{t('candles.candlesLit')}</p>
-          </div>
-        </AnimatedSection>
+              {/* Large decorative candle */}
+              <div className="relative w-20 h-32">
+                {/* Flame layers */}
+                <div className="absolute -top-14 left-1/2 -translate-x-1/2 w-8 h-14 bg-gradient-to-t from-orange-500 via-orange-400 to-yellow-300 rounded-full animate-candle-flicker blur-[2px] opacity-80" />
+                <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-6 h-12 bg-gradient-to-t from-orange-400 via-yellow-400 to-yellow-200 rounded-full animate-candle-flicker-alt" />
+                <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-4 h-8 bg-gradient-to-t from-yellow-300 via-yellow-100 to-white rounded-full animate-candle-flicker-fast" />
+                <div className="absolute -top-8 left-1/2 -translate-x-1/2 w-2 h-4 bg-white rounded-full animate-candle-flicker-fast" />
 
-        {/* Candles Grid with staggered animation */}
-        <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-4">
-          {candles.slice(0, 50).map((candle, index) => (
-            <AnimatedSection key={candle.id} delay={index * 40} className="text-center group">
-              <div className="relative mx-auto w-8 cursor-pointer" title={candle.name}>
-                {/* Glow effect */}
-                <div className="absolute -top-8 left-1/2 -translate-x-1/2 w-6 h-6 bg-gold/30 rounded-full blur-md group-hover:bg-gold/50 transition-all duration-300" />
-                {/* Candle flame */}
-                <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-3 h-5 bg-gradient-to-t from-gold via-yellow-400 to-white rounded-full animate-candle-flicker opacity-90 group-hover:scale-125 transition-transform duration-300" />
+                {/* Wick */}
+                <div className="absolute top-2 left-1/2 -translate-x-1/2 w-1 h-3 bg-charcoal rounded-full" />
+
                 {/* Candle body */}
-                <div className="w-4 h-8 mx-auto bg-gradient-to-b from-cream to-warm-white rounded-sm group-hover:from-gold/20 transition-colors duration-300" />
-              </div>
-              <p className="text-xs text-white/60 mt-2 truncate group-hover:text-gold transition-colors duration-300">{candle.name}</p>
-            </AnimatedSection>
-          ))}
-        </div>
+                <div className="absolute top-4 left-1/2 -translate-x-1/2 w-12 h-24 bg-gradient-to-b from-cream via-warm-white to-cream rounded-lg shadow-xl overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
+                  {/* Decorative cross */}
+                  <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-6 h-8 flex flex-col items-center">
+                    <div className="w-1 h-3 bg-gold/30 rounded-full" />
+                    <div className="w-4 h-1 bg-gold/30 rounded-full -mt-1.5" />
+                    <div className="w-1 h-4 bg-gold/30 rounded-full -mt-0.5" />
+                  </div>
+                </div>
 
-        {candles.length > 50 && (
-          <AnimatedSection delay={2100}>
-            <p className="text-center text-white/50 mt-8 hover:text-gold/70 transition-colors duration-300 cursor-default">+{candles.length - 50} more candles lit</p>
+                {/* Base */}
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-16 h-4 bg-gradient-to-b from-gold via-gold-dark to-gold-dark rounded-md shadow-lg" />
+              </div>
+            </div>
+          </div>
+        </AnimatedSection>
+
+        {/* Light a Candle Form - Enhanced */}
+        <AnimatedSection animation="zoom" delay={200}>
+          <div className="max-w-lg mx-auto mb-16">
+            <div className="relative p-8 rounded-3xl bg-gradient-to-b from-white/10 to-white/5 backdrop-blur-sm border border-white/10 shadow-2xl">
+              {/* Decorative corners */}
+              <div className="absolute top-0 left-0 w-8 h-8 border-l-2 border-t-2 border-gold/50 rounded-tl-xl" />
+              <div className="absolute top-0 right-0 w-8 h-8 border-r-2 border-t-2 border-gold/50 rounded-tr-xl" />
+              <div className="absolute bottom-0 left-0 w-8 h-8 border-l-2 border-b-2 border-gold/50 rounded-bl-xl" />
+              <div className="absolute bottom-0 right-0 w-8 h-8 border-r-2 border-b-2 border-gold/50 rounded-br-xl" />
+
+              <form onSubmit={lightCandle} className="space-y-4">
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder={t('candles.yourName')}
+                    disabled={isSubmitting}
+                    className="w-full px-6 py-4 rounded-2xl bg-white/10 border border-white/20 text-white text-center text-lg placeholder-white/40 focus:border-gold focus:outline-none focus:bg-white/15 focus:shadow-gold-glow transition-all duration-300 disabled:opacity-50"
+                  />
+                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-gold/0 via-gold/10 to-gold/0 opacity-0 hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+                </div>
+                <button
+                  type="submit"
+                  disabled={isSubmitting || !name.trim()}
+                  className="w-full py-4 rounded-2xl bg-gradient-to-r from-gold via-gold-light to-gold text-charcoal font-bold text-lg tracking-wide shadow-lg hover:shadow-gold-glow transition-all duration-500 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden group"
+                >
+                  <span className="relative z-10 flex items-center justify-center gap-3">
+                    {isSubmitting ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-charcoal/30 border-t-charcoal rounded-full animate-spin" />
+                        Lighting...
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-2xl">🕯️</span>
+                        {t('candles.lightCandle')}
+                      </>
+                    )}
+                  </span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+                </button>
+              </form>
+            </div>
+          </div>
+        </AnimatedSection>
+
+        {/* Animated Candle Count - More Dramatic */}
+        <AnimatedSection delay={300} animation="zoom">
+          <div className="text-center mb-16" ref={countRef}>
+            <div className="relative inline-block">
+              {/* Multiple glow layers */}
+              <div className="absolute inset-0 scale-150 bg-gold/10 blur-3xl rounded-full animate-pulse" style={{ animationDuration: '3s' }} />
+              <div className="absolute inset-0 scale-125 bg-gold/20 blur-2xl rounded-full animate-pulse" style={{ animationDuration: '2s', animationDelay: '0.5s' }} />
+              <div className="absolute inset-0 bg-gold/30 blur-xl rounded-full animate-glow-pulse" />
+
+              <div className="relative px-8 py-4">
+                <span className="text-8xl md:text-9xl font-display bg-gradient-to-b from-gold via-yellow-400 to-gold-dark bg-clip-text text-transparent drop-shadow-2xl">
+                  {animatedCount}
+                </span>
+              </div>
+            </div>
+            <p className="text-white/60 mt-6 text-lg tracking-wide">{t('candles.candlesLit')}</p>
+          </div>
+        </AnimatedSection>
+
+        {/* Candles Grid - Enhanced */}
+        <AnimatedSection delay={400}>
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-6 md:gap-8">
+            {candles.slice(0, 40).map((candle, index) => (
+              <AnimatedCandle
+                key={candle.id}
+                candle={candle}
+                index={index}
+                isNew={candle.id === newCandleId}
+              />
+            ))}
+          </div>
+        </AnimatedSection>
+
+        {candles.length > 40 && (
+          <AnimatedSection delay={500}>
+            <div className="text-center mt-12">
+              <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-white/5 border border-white/10">
+                <span className="text-2xl">✨</span>
+                <p className="text-white/50">+{candles.length - 40} more candles glowing in her memory</p>
+                <span className="text-2xl">✨</span>
+              </div>
+            </div>
           </AnimatedSection>
         )}
+
+        {/* Bottom decorative element */}
+        <div className="mt-16 flex justify-center">
+          <div className="flex items-center gap-4">
+            <div className="h-px w-16 bg-gradient-to-r from-transparent to-gold/50" />
+            <span className="text-gold/50 text-2xl">🕊️</span>
+            <div className="h-px w-16 bg-gradient-to-l from-transparent to-gold/50" />
+          </div>
+        </div>
       </div>
     </section>
   );
