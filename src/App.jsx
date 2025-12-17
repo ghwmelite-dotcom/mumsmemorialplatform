@@ -1116,9 +1116,8 @@ const PhotoTimelineSection = () => {
 // Formspree endpoint for candles (backup/notification)
 const FORMSPREE_CANDLES = 'https://formspree.io/f/xwpkgjkq';
 
-// ExtendsClass JSON Storage - TRUE global storage visible to ALL visitors on ANY device
-const CANDLES_STORAGE_URL = 'https://extendsclass.com/api/json-storage/bin/ffabdac';
-const CANDLES_SECURITY_KEY = 'memorial2025';
+// JSONBlob - Global storage with proper CORS support for all visitors
+const CANDLES_STORAGE_URL = 'https://jsonblob.com/api/jsonBlob/019b2cb2-a789-7ecb-b972-2e96915fda40';
 
 // Animated Candle Component - Now with dynamic sizing
 const AnimatedCandle = ({ candle, index, isNew, size = 'normal' }) => {
@@ -1345,8 +1344,7 @@ const CandleLightingSection = ({ showToast }) => {
       const response = await fetch(CANDLES_STORAGE_URL, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
-          'Security-key': CANDLES_SECURITY_KEY
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({ candles: updatedCandles })
       });
