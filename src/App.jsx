@@ -1223,6 +1223,7 @@ const CandleLightingSection = ({ showToast }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [newCandleId, setNewCandleId] = useState(null);
   const [showLightingEffect, setShowLightingEffect] = useState(false);
+  const isPendingSaveRef = useRef(false); // Prevent polling from overwriting during save
   const { ref: countRef, count: animatedCount } = useCountUp(candles.length, 2000);
 
   // Determine candle size based on total count
@@ -1246,22 +1247,31 @@ const CandleLightingSection = ({ showToast }) => {
   // Fetch candles from ExtendsClass - TRUE global storage visible to ALL visitors on ANY device
   useEffect(() => {
     const fetchGlobalCandles = async () => {
+      // Don't fetch if we're in the middle of saving a new candle
+      if (isPendingSaveRef.current) {
+        console.log('Skipping fetch - save in progress');
+        return;
+      }
+
       try {
         const response = await fetch(CANDLES_STORAGE_URL);
 
         if (response.ok) {
           const data = await response.json();
           if (data.candles && Array.isArray(data.candles)) {
-            setCandles(data.candles);
-            // Cache locally as backup
-            localStorage.setItem('memorial-candles-cache', JSON.stringify(data.candles));
+            // Only update if we're not in the middle of a save
+            if (!isPendingSaveRef.current) {
+              setCandles(data.candles);
+              // Cache locally as backup
+              localStorage.setItem('memorial-candles-cache', JSON.stringify(data.candles));
+            }
           }
         }
       } catch (error) {
         console.log('Failed to fetch global candles, using cache:', error);
         // Fallback to localStorage cache
         const cached = localStorage.getItem('memorial-candles-cache');
-        if (cached) {
+        if (cached && !isPendingSaveRef.current) {
           setCandles(JSON.parse(cached));
         }
       } finally {
@@ -1282,6 +1292,7 @@ const CandleLightingSection = ({ showToast }) => {
 
     setIsSubmitting(true);
     setShowLightingEffect(true);
+    isPendingSaveRef.current = true; // Block polling while saving
 
     const newCandle = {
       id: Date.now(),
@@ -1292,8 +1303,15 @@ const CandleLightingSection = ({ showToast }) => {
     // Create updated candles array (new candle first)
     const updatedCandles = [newCandle, ...candles];
 
+    // Update UI immediately for instant feedback
+    setCandles(updatedCandles);
+    setNewCandleId(newCandle.id);
+
+    let saveSuccess = false;
+
     try {
       // Save to ExtendsClass for GLOBAL persistence - ALL visitors will see this
+      console.log('Saving candle to global storage...');
       const response = await fetch(CANDLES_STORAGE_URL, {
         method: 'PUT',
         headers: {
@@ -1303,9 +1321,19 @@ const CandleLightingSection = ({ showToast }) => {
         body: JSON.stringify({ candles: updatedCandles })
       });
 
+      console.log('Save response status:', response.status);
+
       if (!response.ok) {
-        throw new Error('Failed to save');
+        const errorText = await response.text();
+        console.error('Save failed:', response.status, errorText);
+        throw new Error(`Failed to save: ${response.status}`);
       }
+
+      saveSuccess = true;
+      console.log('Candle saved successfully to global storage!');
+
+      // Cache locally as backup
+      localStorage.setItem('memorial-candles-cache', JSON.stringify(updatedCandles));
 
       // Also submit to Formspree for email notification
       fetch(FORMSPREE_CANDLES, {
@@ -1319,17 +1347,22 @@ const CandleLightingSection = ({ showToast }) => {
       }).catch(() => {});
 
     } catch (error) {
-      console.log('Failed to save globally:', error);
+      console.error('Failed to save globally:', error);
+      // Still keep the candle in local cache even if remote fails
+      localStorage.setItem('memorial-candles-cache', JSON.stringify(updatedCandles));
     }
 
-    // Update UI with animation
+    // Complete the UI animation
     setTimeout(() => {
-      setCandles(updatedCandles);
-      setNewCandleId(newCandle.id);
       setName('');
       setIsSubmitting(false);
       setShowLightingEffect(false);
-      showToast(t('candles.thankYou'), 'success');
+      showToast(saveSuccess ? t('candles.thankYou') : 'Candle lit! (syncing...)', 'success');
+
+      // Re-enable polling after a short delay to let server propagate
+      setTimeout(() => {
+        isPendingSaveRef.current = false;
+      }, 3000);
 
       // Clear the "new" animation flag after animation completes
       setTimeout(() => setNewCandleId(null), 2000);
