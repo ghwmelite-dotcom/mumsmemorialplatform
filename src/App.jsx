@@ -32,12 +32,14 @@ const MOBILE_MONEY = {
 // Paystack configuration (TEST MODE)
 const PAYSTACK_PUBLIC_KEY = 'pk_test_9cdde18d25bee33638801838a5779d21f1e7e423';
 
-// Music configuration - YouTube video ID for hymns
-// To change: find a YouTube video of hymns and copy the video ID (the part after v= in the URL)
-// Example: https://www.youtube.com/watch?v=ABC123 -> video ID is "ABC123"
+// Music configuration - YouTube video IDs for hymns
+const MUSIC_PLAYLIST = [
+  { id: 'H23l-y-jdac', title: 'Memorial Hymns', artist: 'Sacred Collection' },
+  { id: 'm9I-nBB9M70', title: 'Gospel Hymns', artist: 'Sacred Collection' },
+  { id: 'oHDPuPxIIW0', title: 'Traditional Hymns', artist: 'Sacred Collection' }
+];
 const MUSIC_CONFIG = {
-  youtubeVideoId: 'oHDPuPxIIW0', // Hymns playlist
-  playlistId: 'RDoHDPuPxIIW0', // YouTube mix playlist
+  playlistId: 'RDH23l-y-jdac', // YouTube mix playlist
   title: 'Memorial Hymns',
   artist: 'Sacred Music Collection'
 };
@@ -379,13 +381,23 @@ const GoldenRainParticles = ({ intensity = 'medium' }) => {
 // ============================================
 
 const AmbientMusicPlayer = () => {
-  const [isExpanded, setIsExpanded] = useState(false); // Start collapsed after unmute
-  const [isMuted, setIsMuted] = useState(true); // Start muted (allows autoplay)
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
   const [showUnmutePrompt, setShowUnmutePrompt] = useState(true);
+  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
 
-  if (!MUSIC_CONFIG.youtubeVideoId) return null;
+  if (!MUSIC_PLAYLIST || MUSIC_PLAYLIST.length === 0) return null;
 
-  const youtubeUrl = `https://www.youtube.com/embed/${MUSIC_CONFIG.youtubeVideoId}?autoplay=1&loop=1&list=${MUSIC_CONFIG.playlistId}&mute=${isMuted ? 1 : 0}&enablejsapi=1`;
+  const currentTrack = MUSIC_PLAYLIST[currentTrackIndex];
+  const youtubeUrl = `https://www.youtube.com/embed/${currentTrack.id}?autoplay=1&loop=1&list=${MUSIC_CONFIG.playlistId}&mute=${isMuted ? 1 : 0}&enablejsapi=1`;
+
+  const nextTrack = () => {
+    setCurrentTrackIndex((prev) => (prev + 1) % MUSIC_PLAYLIST.length);
+  };
+
+  const prevTrack = () => {
+    setCurrentTrackIndex((prev) => (prev - 1 + MUSIC_PLAYLIST.length) % MUSIC_PLAYLIST.length);
+  };
 
   return (
     <>
@@ -463,7 +475,7 @@ const AmbientMusicPlayer = () => {
                 </div>
               ) : null}
               <p className="text-white/70 text-xs truncate">
-                {isMuted ? 'Sound off' : 'Hymns'}
+                {isMuted ? 'Sound off' : currentTrack.title}
               </p>
             </div>
 
@@ -480,16 +492,16 @@ const AmbientMusicPlayer = () => {
           </div>
 
           {/* Expanded View - Video Player */}
-          <div className={`overflow-hidden transition-all duration-300 ease-out ${isExpanded ? 'max-h-48 opacity-100' : 'max-h-0 opacity-0'}`}>
+          <div className={`overflow-hidden transition-all duration-300 ease-out ${isExpanded ? 'max-h-64 opacity-100' : 'max-h-0 opacity-0'}`}>
             <div className="px-2 pb-2 border-t border-white/10">
               <div className="py-2">
-                <p className="text-white font-medium text-xs truncate">{MUSIC_CONFIG.title}</p>
-                <p className="text-white/50 text-[10px]">{MUSIC_CONFIG.artist}</p>
+                <p className="text-white font-medium text-xs truncate">{currentTrack.title}</p>
+                <p className="text-white/50 text-[10px]">{currentTrack.artist}</p>
               </div>
 
               <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-black/50">
                 <iframe
-                  key={isMuted ? 'muted' : 'unmuted'}
+                  key={`${currentTrack.id}-${isMuted ? 'muted' : 'unmuted'}`}
                   width="100%"
                   height="100%"
                   src={youtubeUrl}
@@ -500,6 +512,27 @@ const AmbientMusicPlayer = () => {
                   className="absolute inset-0"
                 />
               </div>
+
+              {/* Track Navigation */}
+              <div className="flex items-center justify-between mt-2 px-1">
+                <button
+                  onClick={prevTrack}
+                  className="w-7 h-7 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-colors"
+                  title="Previous track"
+                >
+                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+                </button>
+                <span className="text-white/50 text-[10px]">
+                  {currentTrackIndex + 1} / {MUSIC_PLAYLIST.length}
+                </span>
+                <button
+                  onClick={nextTrack}
+                  className="w-7 h-7 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-colors"
+                  title="Next track"
+                >
+                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -508,7 +541,7 @@ const AmbientMusicPlayer = () => {
       {/* Hidden iframe for audio-only playback when collapsed */}
       {!isExpanded && (
         <iframe
-          key={`hidden-${isMuted ? 'muted' : 'unmuted'}`}
+          key={`hidden-${currentTrack.id}-${isMuted ? 'muted' : 'unmuted'}`}
           src={youtubeUrl}
           title="Memorial Hymns Audio"
           className="hidden"
