@@ -392,7 +392,7 @@ const AmbientMusicPlayer = () => {
   if (!MUSIC_PLAYLIST || MUSIC_PLAYLIST.length === 0) return null;
 
   const currentTrack = MUSIC_PLAYLIST[currentTrackIndex];
-  const youtubeUrl = `https://www.youtube.com/embed/${currentTrack.id}?autoplay=1&loop=1&list=${MUSIC_CONFIG.playlistId}&mute=${isMuted ? 1 : 0}&enablejsapi=1`;
+  const youtubeUrl = `https://www.youtube.com/embed/${currentTrack.id}?autoplay=1&loop=1&playlist=${currentTrack.id}&mute=${isMuted ? 1 : 0}&enablejsapi=1`;
 
   // Shuffle to a random different track
   const shuffleTrack = () => {
