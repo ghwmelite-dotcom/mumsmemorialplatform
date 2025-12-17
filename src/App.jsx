@@ -32,10 +32,13 @@ const MOBILE_MONEY = {
 // Paystack configuration (TEST MODE)
 const PAYSTACK_PUBLIC_KEY = 'pk_test_9cdde18d25bee33638801838a5779d21f1e7e423';
 
-// Music playlist (add URLs to hymns/songs)
-// Audio hosted on Cloudinary for reliable cross-origin playback
+// Music playlist - using Cloudinary-hosted audio
 const MUSIC_PLAYLIST = [
-  { title: 'A Faithful Life Remembered Through Music', artist: 'Memorial Hymns Collection (12 Tracks)', url: 'https://res.cloudinary.com/db967oq9r/video/upload/v1766007005/k96tzpjq8audsvde0rov.mp3' }
+  {
+    title: 'A Faithful Life Remembered Through Music',
+    artist: 'Memorial Hymns Collection (12 Tracks)',
+    url: 'https://res.cloudinary.com/db967oq9r/video/upload/v1766007005/k96tzpjq8audsvde0rov.mp3'
+  }
 ];
 
 // Family tree data
@@ -377,12 +380,12 @@ const GoldenRainParticles = ({ intensity = 'medium' }) => {
 const AmbientMusicPlayer = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [volume, setVolume] = useState(0.5);
+  const [error, setError] = useState(null);
   const audioRef = useRef(null);
 
-  // Use the same playlist as MusicPlayer
   const currentTrack = MUSIC_PLAYLIST[0];
-  const hasMusic = currentTrack && currentTrack.url;
 
   useEffect(() => {
     if (audioRef.current) {
@@ -390,61 +393,100 @@ const AmbientMusicPlayer = () => {
     }
   }, [volume]);
 
-  const togglePlay = () => {
-    if (!audioRef.current || !hasMusic) return;
-    if (isPlaying) {
-      audioRef.current.pause();
-      setIsPlaying(false);
-    } else {
-      audioRef.current.play()
-        .then(() => setIsPlaying(true))
-        .catch((err) => console.log('Audio play failed:', err));
+  const handlePlay = async () => {
+    if (!audioRef.current) return;
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      await audioRef.current.play();
+      setIsPlaying(true);
+    } catch (err) {
+      console.error('Play failed:', err);
+      setError('Tap again to play');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  if (!hasMusic) return null;
+  const handlePause = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    }
+  };
+
+  const togglePlay = () => {
+    if (isPlaying) {
+      handlePause();
+    } else {
+      handlePlay();
+    }
+  };
 
   return (
-    <div className={`fixed bottom-6 left-6 z-40 transition-all duration-500 ${isExpanded ? 'w-72' : 'w-14'}`}>
+    <div className={`fixed bottom-6 left-6 z-40 transition-all duration-500 ${isExpanded ? 'w-80' : 'w-14'}`}>
       <audio
         ref={audioRef}
         src={currentTrack.url}
-        preload="metadata"
-        onPlay={() => setIsPlaying(true)}
+        preload="none"
+        onPlay={() => { setIsPlaying(true); setIsLoading(false); }}
         onPause={() => setIsPlaying(false)}
         onEnded={() => setIsPlaying(false)}
-        onError={(e) => console.error('Audio error:', e.target.error)}
+        onCanPlay={() => setIsLoading(false)}
+        onWaiting={() => setIsLoading(true)}
+        onError={(e) => {
+          console.error('Audio error:', e);
+          setError('Unable to load audio');
+          setIsLoading(false);
+        }}
       />
       <div className="music-player-mini rounded-2xl shadow-2xl border border-gold/20 overflow-hidden">
         {/* Mini View */}
         <div className="flex items-center p-3 gap-3">
           <button
             onClick={togglePlay}
-            className="w-8 h-8 flex items-center justify-center rounded-full bg-gold text-white hover:bg-gold-dark transition-colors flex-shrink-0"
+            disabled={isLoading}
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-gold text-white hover:bg-gold-dark transition-colors flex-shrink-0 disabled:opacity-50"
           >
-            {isPlaying ? (
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/></svg>
+            {isLoading ? (
+              <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            ) : isPlaying ? (
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/></svg>
             ) : (
-              <svg className="w-4 h-4 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+              <svg className="w-5 h-5 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
             )}
           </button>
 
-          {/* Equalizer Bars */}
-          {isPlaying && (
-            <div className="flex items-end gap-0.5 h-6">
-              {[...Array(4)].map((_, i) => (
-                <div
-                  key={i}
-                  className="w-1 bg-gold rounded-full animate-equalizer"
-                  style={{ '--max-height': `${12 + Math.random() * 12}px`, '--speed': `${0.3 + Math.random() * 0.3}s` }}
-                />
-              ))}
-            </div>
-          )}
+          {/* Equalizer Bars or Status */}
+          <div className="flex-1 min-w-0">
+            {isPlaying ? (
+              <div className="flex items-end gap-0.5 h-6">
+                {[...Array(5)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="w-1 bg-gold rounded-full animate-equalizer"
+                    style={{
+                      animationDelay: `${i * 0.1}s`,
+                      height: '4px'
+                    }}
+                  />
+                ))}
+              </div>
+            ) : error ? (
+              <p className="text-red-400 text-xs">{error}</p>
+            ) : (
+              <p className="text-white/60 text-xs">♪ Hymns</p>
+            )}
+          </div>
 
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="ml-auto text-white/60 hover:text-white transition-colors"
+            className="text-white/60 hover:text-white transition-colors flex-shrink-0"
           >
             <svg className={`w-5 h-5 transition-transform ${isExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -460,23 +502,29 @@ const AmbientMusicPlayer = () => {
               <p className="text-white/50 text-xs">{currentTrack.artist}</p>
             </div>
 
-            {/* Controls */}
-            <div className="flex items-center justify-center gap-4">
+            {/* Large Play Button */}
+            <div className="flex items-center justify-center gap-4 mb-3">
               <button
                 onClick={togglePlay}
-                className="w-12 h-12 flex items-center justify-center rounded-full bg-gold text-white hover:bg-gold-dark transition-colors"
+                disabled={isLoading}
+                className="w-14 h-14 flex items-center justify-center rounded-full bg-gold text-white hover:bg-gold-dark transition-colors disabled:opacity-50"
               >
-                {isPlaying ? (
-                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/></svg>
+                {isLoading ? (
+                  <svg className="w-7 h-7 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                ) : isPlaying ? (
+                  <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/></svg>
                 ) : (
-                  <svg className="w-6 h-6 ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                  <svg className="w-7 h-7 ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                 )}
               </button>
             </div>
 
             {/* Volume */}
-            <div className="flex items-center gap-2 mt-3">
-              <svg className="w-4 h-4 text-white/50" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3z"/></svg>
+            <div className="flex items-center gap-2">
+              <svg className="w-4 h-4 text-white/50 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3z"/></svg>
               <input
                 type="range"
                 min="0"
@@ -490,8 +538,13 @@ const AmbientMusicPlayer = () => {
                 }}
                 className="flex-1 h-1 bg-white/20 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-gold [&::-webkit-slider-thumb]:rounded-full"
               />
-              <svg className="w-4 h-4 text-white/50" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+              <svg className="w-4 h-4 text-white/50 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
             </div>
+
+            {/* Help text */}
+            <p className="text-white/40 text-xs text-center mt-3">
+              {isPlaying ? '44 min of hymns' : 'Tap play to start music'}
+            </p>
           </div>
         )}
       </div>
