@@ -36,8 +36,9 @@ const PAYSTACK_PUBLIC_KEY = 'pk_test_9cdde18d25bee33638801838a5779d21f1e7e423';
 // To change: find a YouTube video of hymns and copy the video ID (the part after v= in the URL)
 // Example: https://www.youtube.com/watch?v=ABC123 -> video ID is "ABC123"
 const MUSIC_CONFIG = {
-  youtubeVideoId: 'pWe7wTVbLUU', // Traditional Christian Hymns playlist
-  title: 'Traditional Hymns',
+  youtubeVideoId: 'oHDPuPxIIW0', // Hymns playlist
+  playlistId: 'RDoHDPuPxIIW0', // YouTube mix playlist
+  title: 'Memorial Hymns',
   artist: 'Sacred Music Collection'
 };
 
@@ -425,7 +426,7 @@ const AmbientMusicPlayer = () => {
                 <iframe
                   width="100%"
                   height="100%"
-                  src={`https://www.youtube.com/embed/${MUSIC_CONFIG.youtubeVideoId}?autoplay=1&loop=1`}
+                  src={`https://www.youtube.com/embed/${MUSIC_CONFIG.youtubeVideoId}?autoplay=1&loop=1&list=${MUSIC_CONFIG.playlistId}`}
                   title="Memorial Hymns"
                   frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
