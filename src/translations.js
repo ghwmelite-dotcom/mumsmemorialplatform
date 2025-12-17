@@ -101,7 +101,8 @@ export const translations = {
       videoTributes: 'Video & Audio Tributes',
       uploadTribute: 'Upload a Tribute',
       recordVideo: 'Record a video or voice message to share your memories.',
-      successMessage: 'Your tribute has been added. Thank you for sharing!'
+      successMessage: 'Your tribute has been added. Thank you for sharing!',
+      helpMeWrite: 'Help me write'
     },
 
     // Donations
@@ -255,7 +256,8 @@ export const translations = {
       videoTributes: 'Video kple Gbe Akpɔkplɔwo',
       uploadTribute: 'Ɖo Akpɔkplɔ Ɖe Dzi',
       recordVideo: 'Tso video alo gbe na wò nuxlẽwo maɖoɖo.',
-      successMessage: 'Akpe! Woƒe wo akpɔkplɔ ɖe agbalẽ la me.'
+      successMessage: 'Akpe! Woƒe wo akpɔkplɔ ɖe agbalẽ la me.',
+      helpMeWrite: 'Kpe ɖe ŋunye'
     },
 
     // Donations

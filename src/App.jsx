@@ -32,6 +32,9 @@ const MOBILE_MONEY = {
 // Paystack configuration (TEST MODE)
 const PAYSTACK_PUBLIC_KEY = 'pk_test_9cdde18d25bee33638801838a5779d21f1e7e423';
 
+// AI Tribute Writer API (Cloudflare Worker with Claude)
+const TRIBUTE_AI_URL = 'https://memorial-tribute-ai.ghwmelite.workers.dev';
+
 // Music configuration - YouTube video IDs for hymns
 const MUSIC_PLAYLIST = [
   { id: 'H23l-y-jdac', title: 'Memorial Hymns', artist: 'Sacred Collection' },
@@ -2447,6 +2450,307 @@ const LiveStreamSection = () => {
 };
 
 // ============================================
+// AI TRIBUTE WRITER MODAL
+// ============================================
+
+const AITributeWriterModal = ({ isOpen, onClose, onUseTribute, userName }) => {
+  const { t, language } = useLanguage();
+  const [step, setStep] = useState(1);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedTribute, setGeneratedTribute] = useState('');
+  const [error, setError] = useState('');
+  const [formData, setFormData] = useState({
+    relationship: '',
+    memories: [],
+    specificMemory: ''
+  });
+
+  const relationships = [
+    { value: 'family', label: language === 'en' ? 'Family Member' : 'Ƒomeviwo' },
+    { value: 'church', label: language === 'en' ? 'Church Family' : 'Hame ƒomeviwo' },
+    { value: 'friend', label: language === 'en' ? 'Friend' : 'Xɔlɔ' },
+    { value: 'neighbor', label: language === 'en' ? 'Neighbor' : 'Tokplɔvi' },
+    { value: 'colleague', label: language === 'en' ? 'Colleague' : 'Dɔwɔlɔ' },
+    { value: 'other', label: language === 'en' ? 'Other' : 'Bubu' }
+  ];
+
+  const memoryOptions = [
+    { value: 'smile', label: language === 'en' ? 'Her warm smile' : 'Eƒe nuko vivi' },
+    { value: 'cooking', label: language === 'en' ? 'Her cooking' : 'Eƒe nuɖuɖu' },
+    { value: 'faith', label: language === 'en' ? 'Her strong faith' : 'Eƒe xɔse sesẽ' },
+    { value: 'kindness', label: language === 'en' ? 'Her kindness' : 'Eƒe nyuie' },
+    { value: 'wisdom', label: language === 'en' ? 'Her wisdom' : 'Eƒe nunyala' },
+    { value: 'love', label: language === 'en' ? 'Her love for family' : 'Eƒe lɔlɔ̃ na ƒome' },
+    { value: 'laughter', label: language === 'en' ? 'Her laughter' : 'Eƒe kɔdzidzi' },
+    { value: 'stories', label: language === 'en' ? 'Her stories' : 'Eƒe nyagbegblewo' }
+  ];
+
+  const toggleMemory = (value) => {
+    setFormData(prev => ({
+      ...prev,
+      memories: prev.memories.includes(value)
+        ? prev.memories.filter(m => m !== value)
+        : [...prev.memories, value]
+    }));
+  };
+
+  const generateTribute = async () => {
+    setIsGenerating(true);
+    setError('');
+
+    try {
+      const response = await fetch(TRIBUTE_AI_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          relationship: relationships.find(r => r.value === formData.relationship)?.label || formData.relationship,
+          memories: formData.memories.map(m => memoryOptions.find(opt => opt.value === m)?.label || m),
+          specificMemory: formData.specificMemory,
+          name: userName
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate tribute');
+      }
+
+      const data = await response.json();
+      setGeneratedTribute(data.tribute);
+      setStep(3);
+    } catch (err) {
+      setError(language === 'en'
+        ? 'Unable to generate tribute. Please try again or write your own message.'
+        : 'Míate ŋu wɔ tribute o. Taflatse zã trɔa alo ŋlɔ tɔwoe ɖokui.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleUseTribute = () => {
+    onUseTribute(generatedTribute);
+    onClose();
+    resetForm();
+  };
+
+  const resetForm = () => {
+    setStep(1);
+    setFormData({ relationship: '', memories: [], specificMemory: '' });
+    setGeneratedTribute('');
+    setError('');
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={onClose}>
+      <div
+        className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto animate-fade-in"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="bg-gradient-to-r from-burgundy to-burgundy-dark p-6 rounded-t-2xl">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-xl font-display text-white">
+                  {language === 'en' ? 'AI Tribute Writer' : 'AI Tribute Ŋlɔla'}
+                </h3>
+                <p className="text-white/70 text-sm">
+                  {language === 'en' ? 'Let us help you find the right words' : 'Mía kpɔ mɔ be míakpe ɖe ŋuwò'}
+                </p>
+              </div>
+            </div>
+            <button onClick={onClose} className="text-white/70 hover:text-white transition-colors">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Progress Steps */}
+          <div className="flex items-center justify-center gap-2 mt-4">
+            {[1, 2, 3].map((s) => (
+              <div key={s} className="flex items-center">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium transition-all ${
+                  step >= s ? 'bg-gold text-white' : 'bg-white/20 text-white/50'
+                }`}>
+                  {step > s ? '✓' : s}
+                </div>
+                {s < 3 && <div className={`w-8 h-0.5 ${step > s ? 'bg-gold' : 'bg-white/20'}`} />}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="p-6">
+          {/* Step 1: Relationship */}
+          {step === 1 && (
+            <div className="space-y-4">
+              <h4 className="font-medium text-charcoal text-lg">
+                {language === 'en' ? 'How did you know Grandma?' : 'Aleke nènya Mama?'}
+              </h4>
+              <div className="grid grid-cols-2 gap-3">
+                {relationships.map((rel) => (
+                  <button
+                    key={rel.value}
+                    onClick={() => setFormData(prev => ({ ...prev, relationship: rel.value }))}
+                    className={`p-4 rounded-xl border-2 text-left transition-all ${
+                      formData.relationship === rel.value
+                        ? 'border-gold bg-gold/10 text-charcoal'
+                        : 'border-warm-gray/20 hover:border-gold/50 text-warm-gray'
+                    }`}
+                  >
+                    {rel.label}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setStep(2)}
+                disabled={!formData.relationship}
+                className={`w-full py-3 rounded-xl font-medium transition-all ${
+                  formData.relationship
+                    ? 'bg-gold text-white hover:bg-gold-dark'
+                    : 'bg-warm-gray/20 text-warm-gray cursor-not-allowed'
+                }`}
+              >
+                {language === 'en' ? 'Continue' : 'Yi ɖe ŋgɔ'}
+              </button>
+            </div>
+          )}
+
+          {/* Step 2: Memories */}
+          {step === 2 && (
+            <div className="space-y-4">
+              <h4 className="font-medium text-charcoal text-lg">
+                {language === 'en' ? 'What do you remember most about her?' : 'Nuka nèdoa ŋku ɖe eŋu nyuie?'}
+              </h4>
+              <p className="text-sm text-warm-gray">
+                {language === 'en' ? 'Select all that apply' : 'Tia wo katã siwo sɔ'}
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                {memoryOptions.map((mem) => (
+                  <button
+                    key={mem.value}
+                    onClick={() => toggleMemory(mem.value)}
+                    className={`p-3 rounded-xl border-2 text-left text-sm transition-all ${
+                      formData.memories.includes(mem.value)
+                        ? 'border-gold bg-gold/10 text-charcoal'
+                        : 'border-warm-gray/20 hover:border-gold/50 text-warm-gray'
+                    }`}
+                  >
+                    {formData.memories.includes(mem.value) && <span className="mr-1">✓</span>}
+                    {mem.label}
+                  </button>
+                ))}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-charcoal mb-2">
+                  {language === 'en' ? 'Any specific memory? (optional)' : 'Nane ŋkɔ ko? (mele be)'}
+                </label>
+                <textarea
+                  value={formData.specificMemory}
+                  onChange={(e) => setFormData(prev => ({ ...prev, specificMemory: e.target.value }))}
+                  placeholder={language === 'en' ? 'Share a brief memory...' : 'Gblɔ nane kpui...'}
+                  className="w-full px-4 py-3 rounded-xl border-2 border-warm-gray/20 focus:border-gold focus:ring-0 outline-none transition-colors resize-none bg-cream/50"
+                  rows={3}
+                />
+              </div>
+
+              {error && (
+                <div className="p-3 rounded-xl bg-red-50 text-red-600 text-sm">
+                  {error}
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setStep(1)}
+                  className="flex-1 py-3 rounded-xl border-2 border-warm-gray/20 text-warm-gray hover:border-gold hover:text-gold transition-all"
+                >
+                  {language === 'en' ? 'Back' : 'Gbugbɔ'}
+                </button>
+                <button
+                  onClick={generateTribute}
+                  disabled={formData.memories.length === 0 || isGenerating}
+                  className={`flex-1 py-3 rounded-xl font-medium transition-all flex items-center justify-center gap-2 ${
+                    formData.memories.length > 0 && !isGenerating
+                      ? 'bg-gold text-white hover:bg-gold-dark'
+                      : 'bg-warm-gray/20 text-warm-gray cursor-not-allowed'
+                  }`}
+                >
+                  {isGenerating ? (
+                    <>
+                      <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      {language === 'en' ? 'Writing...' : 'Le ŋlɔm...'}
+                    </>
+                  ) : (
+                    language === 'en' ? 'Generate Tribute' : 'Wɔ Tribute'
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: Generated Tribute */}
+          {step === 3 && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-green-600">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <span className="font-medium">
+                  {language === 'en' ? 'Your tribute is ready!' : 'Wò tribute sɔ!'}
+                </span>
+              </div>
+
+              <div className="p-4 rounded-xl bg-cream border-2 border-gold/20">
+                <textarea
+                  value={generatedTribute}
+                  onChange={(e) => setGeneratedTribute(e.target.value)}
+                  className="w-full bg-transparent text-charcoal resize-none outline-none min-h-[120px]"
+                  rows={5}
+                />
+              </div>
+
+              <p className="text-sm text-warm-gray italic">
+                {language === 'en'
+                  ? 'Feel free to edit the message above before using it.'
+                  : 'Àte ŋu trɔ nyaa dzi hafi azãe.'}
+              </p>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setStep(2)}
+                  className="flex-1 py-3 rounded-xl border-2 border-warm-gray/20 text-warm-gray hover:border-gold hover:text-gold transition-all"
+                >
+                  {language === 'en' ? 'Try Again' : 'Zã trɔa'}
+                </button>
+                <button
+                  onClick={handleUseTribute}
+                  className="flex-1 py-3 rounded-xl bg-gold text-white font-medium hover:bg-gold-dark transition-all"
+                >
+                  {language === 'en' ? 'Use This Tribute' : 'Zã Tribute sia'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================
 // TRIBUTES SECTION (Guestbook + Media)
 // ============================================
 
@@ -2456,6 +2760,7 @@ const TributesSection = ({ showToast }) => {
     { id: 'welcome', name: 'The Family', location: 'Accra, Ghana', message: 'We welcome all who knew and loved Grandma to share their memories here. Your words mean everything to us.', date: 'December 2025' }
   ]);
   const [formData, setFormData] = useState({ name: '', location: '', message: '' });
+  const [showAIWriter, setShowAIWriter] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mediaTributes, setMediaTributes] = useState(() => {
     const saved = localStorage.getItem('memorial-media-tributes');
@@ -2602,7 +2907,19 @@ const TributesSection = ({ showToast }) => {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-charcoal mb-2">{t('tributes.yourMessage')} *</label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-charcoal">{t('tributes.yourMessage')} *</label>
+                  <button
+                    type="button"
+                    onClick={() => setShowAIWriter(true)}
+                    className="flex items-center gap-1.5 text-sm text-burgundy hover:text-burgundy-dark transition-colors group"
+                  >
+                    <svg className="w-4 h-4 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                    {t('tributes.helpMeWrite') || 'Help me write'}
+                  </button>
+                </div>
                 <textarea required rows={4} value={formData.message} onChange={(e) => setFormData({ ...formData, message: e.target.value })} className="w-full px-4 py-3 rounded-xl border-2 border-warm-gray/20 focus:border-gold focus:ring-0 outline-none transition-colors resize-none bg-cream/50" />
               </div>
               <Button type="submit" disabled={isSubmitting}>
@@ -2611,6 +2928,14 @@ const TributesSection = ({ showToast }) => {
             </form>
           </Card>
         </AnimatedSection>
+
+        {/* AI Tribute Writer Modal */}
+        <AITributeWriterModal
+          isOpen={showAIWriter}
+          onClose={() => setShowAIWriter(false)}
+          onUseTribute={(tribute) => setFormData(prev => ({ ...prev, message: tribute }))}
+          userName={formData.name}
+        />
 
         {/* Entries List - Animated Guestbook Signatures */}
         <div className="space-y-6">
