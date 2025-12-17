@@ -1223,7 +1223,11 @@ const CandleLightingSection = ({ showToast }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [newCandleId, setNewCandleId] = useState(null);
   const [showLightingEffect, setShowLightingEffect] = useState(false);
-  const isPendingSaveRef = useRef(false); // Prevent polling from overwriting during save
+
+  // Use a version counter to prevent stale data from overwriting fresh data
+  const localVersionRef = useRef(0);
+  const pollIntervalRef = useRef(null);
+
   const { ref: countRef, count: animatedCount } = useCountUp(candles.length, 2000);
 
   // Determine candle size based on total count
@@ -1244,47 +1248,51 @@ const CandleLightingSection = ({ showToast }) => {
     return 'grid-cols-8 sm:grid-cols-12 md:grid-cols-16';
   };
 
-  // Fetch candles from ExtendsClass - TRUE global storage visible to ALL visitors on ANY device
-  useEffect(() => {
-    const fetchGlobalCandles = async () => {
-      // Don't fetch if we're in the middle of saving a new candle
-      if (isPendingSaveRef.current) {
-        console.log('Skipping fetch - save in progress');
-        return;
-      }
+  // Fetch candles from server
+  const fetchGlobalCandles = useCallback(async (isInitial = false) => {
+    // Capture version at start of fetch
+    const fetchVersion = localVersionRef.current;
 
-      try {
-        const response = await fetch(CANDLES_STORAGE_URL);
+    try {
+      const response = await fetch(CANDLES_STORAGE_URL);
 
-        if (response.ok) {
-          const data = await response.json();
-          if (data.candles && Array.isArray(data.candles)) {
-            // Only update if we're not in the middle of a save
-            if (!isPendingSaveRef.current) {
-              setCandles(data.candles);
-              // Cache locally as backup
-              localStorage.setItem('memorial-candles-cache', JSON.stringify(data.candles));
-            }
+      if (response.ok) {
+        const data = await response.json();
+        if (data.candles && Array.isArray(data.candles)) {
+          // CRITICAL: Only update if no newer local changes happened during fetch
+          if (localVersionRef.current === fetchVersion) {
+            setCandles(data.candles);
+            localStorage.setItem('memorial-candles-cache', JSON.stringify(data.candles));
+          } else {
+            console.log('Skipping stale fetch result - local version changed');
           }
         }
-      } catch (error) {
-        console.log('Failed to fetch global candles, using cache:', error);
-        // Fallback to localStorage cache
+      }
+    } catch (error) {
+      console.log('Failed to fetch global candles:', error);
+      // Only use cache on initial load
+      if (isInitial) {
         const cached = localStorage.getItem('memorial-candles-cache');
-        if (cached && !isPendingSaveRef.current) {
+        if (cached) {
           setCandles(JSON.parse(cached));
         }
-      } finally {
-        setIsLoading(false);
       }
-    };
-
-    fetchGlobalCandles();
-
-    // Poll for updates every 10 seconds to see new candles from other visitors
-    const pollInterval = setInterval(fetchGlobalCandles, 10000);
-    return () => clearInterval(pollInterval);
+    } finally {
+      if (isInitial) setIsLoading(false);
+    }
   }, []);
+
+  // Initial fetch and polling setup
+  useEffect(() => {
+    fetchGlobalCandles(true);
+
+    // Poll for updates every 15 seconds
+    pollIntervalRef.current = setInterval(() => fetchGlobalCandles(false), 15000);
+
+    return () => {
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+    };
+  }, [fetchGlobalCandles]);
 
   const lightCandle = async (e) => {
     e.preventDefault();
@@ -1292,7 +1300,15 @@ const CandleLightingSection = ({ showToast }) => {
 
     setIsSubmitting(true);
     setShowLightingEffect(true);
-    isPendingSaveRef.current = true; // Block polling while saving
+
+    // Increment version to invalidate any in-flight fetches
+    localVersionRef.current += 1;
+
+    // Stop polling temporarily
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current);
+      pollIntervalRef.current = null;
+    }
 
     const newCandle = {
       id: Date.now(),
@@ -1300,17 +1316,31 @@ const CandleLightingSection = ({ showToast }) => {
       litAt: new Date().toISOString()
     };
 
-    // Create updated candles array (new candle first)
-    const updatedCandles = [newCandle, ...candles];
+    // IMPORTANT: First fetch latest from server to avoid overwriting others' candles
+    let serverCandles = candles;
+    try {
+      const getResponse = await fetch(CANDLES_STORAGE_URL);
+      if (getResponse.ok) {
+        const data = await getResponse.json();
+        if (data.candles && Array.isArray(data.candles)) {
+          serverCandles = data.candles;
+        }
+      }
+    } catch (e) {
+      console.log('Could not fetch latest, using local state');
+    }
 
-    // Update UI immediately for instant feedback
+    // Merge: add new candle to server's latest data
+    const updatedCandles = [newCandle, ...serverCandles];
+
+    // Update UI immediately
+    localVersionRef.current += 1; // Increment again to protect our update
     setCandles(updatedCandles);
     setNewCandleId(newCandle.id);
 
     let saveSuccess = false;
 
     try {
-      // Save to ExtendsClass for GLOBAL persistence - ALL visitors will see this
       console.log('Saving candle to global storage...');
       const response = await fetch(CANDLES_STORAGE_URL, {
         method: 'PUT',
@@ -1330,12 +1360,10 @@ const CandleLightingSection = ({ showToast }) => {
       }
 
       saveSuccess = true;
-      console.log('Candle saved successfully to global storage!');
-
-      // Cache locally as backup
+      console.log('Candle saved successfully!');
       localStorage.setItem('memorial-candles-cache', JSON.stringify(updatedCandles));
 
-      // Also submit to Formspree for email notification
+      // Email notification
       fetch(FORMSPREE_CANDLES, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1348,7 +1376,6 @@ const CandleLightingSection = ({ showToast }) => {
 
     } catch (error) {
       console.error('Failed to save globally:', error);
-      // Still keep the candle in local cache even if remote fails
       localStorage.setItem('memorial-candles-cache', JSON.stringify(updatedCandles));
     }
 
@@ -1358,14 +1385,14 @@ const CandleLightingSection = ({ showToast }) => {
       setIsSubmitting(false);
       setShowLightingEffect(false);
       showToast(saveSuccess ? t('candles.thankYou') : 'Candle lit! (syncing...)', 'success');
-
-      // Re-enable polling after a short delay to let server propagate
-      setTimeout(() => {
-        isPendingSaveRef.current = false;
-      }, 3000);
-
-      // Clear the "new" animation flag after animation completes
       setTimeout(() => setNewCandleId(null), 2000);
+
+      // Resume polling after 5 seconds
+      setTimeout(() => {
+        if (!pollIntervalRef.current) {
+          pollIntervalRef.current = setInterval(() => fetchGlobalCandles(false), 15000);
+        }
+      }, 5000);
     }, 1500);
   };
 
