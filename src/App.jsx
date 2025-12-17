@@ -1116,69 +1116,84 @@ const PhotoTimelineSection = () => {
 // Formspree endpoint for candles (create one at formspree.io)
 const FORMSPREE_CANDLES = 'https://formspree.io/f/xwpkgjkq';
 
-// Animated Candle Component
-const AnimatedCandle = ({ candle, index, isNew }) => {
+// Initial memorial candles that everyone sees
+const INITIAL_CANDLES = [
+  { id: 1, name: 'The Family', litAt: '2025-01-01T00:00:00Z' },
+  { id: 2, name: 'John Marion K. Hodges', litAt: '2025-01-02T00:00:00Z' },
+  { id: 3, name: 'Osborn M.D.K. Hodges', litAt: '2025-01-02T00:00:00Z' },
+  { id: 4, name: 'Ria Hodges', litAt: '2025-01-03T00:00:00Z' },
+  { id: 5, name: 'Gayle Hodges', litAt: '2025-01-03T00:00:00Z' },
+  { id: 6, name: 'With Love & Prayers', litAt: '2025-01-04T00:00:00Z' },
+  { id: 7, name: 'Forever Remembered', litAt: '2025-01-04T00:00:00Z' },
+  { id: 8, name: 'Rest In Peace', litAt: '2025-01-05T00:00:00Z' },
+];
+
+// Animated Candle Component - Now with dynamic sizing
+const AnimatedCandle = ({ candle, index, isNew, size = 'normal' }) => {
   const [isHovered, setIsHovered] = useState(false);
+
+  // Size configurations based on total candle count
+  const sizeConfig = {
+    large: { wrapper: 'w-14 h-24', flame: 'w-5 h-8', body: 'w-7 h-16', base: 'w-10', text: 'text-sm' },
+    normal: { wrapper: 'w-12 h-20', flame: 'w-4 h-7', body: 'w-6 h-14', base: 'w-8', text: 'text-sm' },
+    medium: { wrapper: 'w-10 h-16', flame: 'w-3 h-5', body: 'w-5 h-11', base: 'w-7', text: 'text-xs' },
+    small: { wrapper: 'w-8 h-14', flame: 'w-2.5 h-4', body: 'w-4 h-9', base: 'w-6', text: 'text-xs' },
+    tiny: { wrapper: 'w-6 h-10', flame: 'w-2 h-3', body: 'w-3 h-7', base: 'w-5', text: 'text-[10px]' },
+  };
+
+  const s = sizeConfig[size] || sizeConfig.normal;
 
   return (
     <div
       className={`text-center group cursor-pointer transform transition-all duration-700 ${isNew ? 'animate-candle-appear' : ''}`}
-      style={{ animationDelay: `${index * 50}ms` }}
+      style={{ animationDelay: `${index * 30}ms` }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      title={`${candle.name} - ${candle.litAt ? new Date(candle.litAt).toLocaleDateString() : ''}`}
     >
-      <div className="relative mx-auto w-12 h-20">
+      <div className={`relative mx-auto ${s.wrapper}`}>
         {/* Outer glow - large ambient */}
-        <div className={`absolute -top-10 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full blur-2xl transition-all duration-500 ${isHovered ? 'bg-gold/50 scale-150' : 'bg-gold/20'}`} />
+        <div className={`absolute -top-8 left-1/2 -translate-x-1/2 w-12 h-12 rounded-full blur-2xl transition-all duration-500 ${isHovered ? 'bg-gold/50 scale-150' : 'bg-gold/20'}`} />
 
         {/* Middle glow - medium */}
-        <div className={`absolute -top-8 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full blur-xl transition-all duration-300 ${isHovered ? 'bg-orange-400/60' : 'bg-orange-400/30'}`} />
+        <div className={`absolute -top-6 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full blur-xl transition-all duration-300 ${isHovered ? 'bg-orange-400/60' : 'bg-orange-400/30'}`} />
 
         {/* Inner glow - intense */}
-        <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-6 h-6 bg-yellow-300/50 rounded-full blur-md animate-pulse" style={{ animationDuration: '1.5s' }} />
+        <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-4 h-4 bg-yellow-300/50 rounded-full blur-md animate-pulse" style={{ animationDuration: '1.5s' }} />
 
         {/* Flame outer */}
-        <div className="absolute -top-8 left-1/2 -translate-x-1/2 w-4 h-7 bg-gradient-to-t from-orange-500 via-orange-400 to-yellow-300 rounded-full animate-candle-flicker opacity-90 blur-[1px]" />
+        <div className={`absolute -top-6 left-1/2 -translate-x-1/2 ${s.flame} bg-gradient-to-t from-orange-500 via-orange-400 to-yellow-300 rounded-full animate-candle-flicker opacity-90 blur-[1px]`} />
 
         {/* Flame middle */}
-        <div className="absolute -top-7 left-1/2 -translate-x-1/2 w-3 h-6 bg-gradient-to-t from-orange-400 via-yellow-400 to-yellow-200 rounded-full animate-candle-flicker-alt opacity-95" />
+        <div className="absolute -top-5 left-1/2 -translate-x-1/2 w-3 h-5 bg-gradient-to-t from-orange-400 via-yellow-400 to-yellow-200 rounded-full animate-candle-flicker-alt opacity-95" />
 
         {/* Flame core */}
-        <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-2 h-4 bg-gradient-to-t from-yellow-300 via-yellow-100 to-white rounded-full animate-candle-flicker-fast" />
+        <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-2 h-3 bg-gradient-to-t from-yellow-300 via-yellow-100 to-white rounded-full animate-candle-flicker-fast" />
 
         {/* Flame tip - white hot */}
-        <div className="absolute -top-5 left-1/2 -translate-x-1/2 w-1 h-2 bg-white rounded-full opacity-90 animate-candle-flicker-fast" />
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-1 h-2 bg-white rounded-full opacity-90 animate-candle-flicker-fast" />
 
         {/* Wick */}
-        <div className="absolute top-1 left-1/2 -translate-x-1/2 w-0.5 h-2 bg-charcoal rounded-full" />
+        <div className="absolute top-1 left-1/2 -translate-x-1/2 w-0.5 h-1.5 bg-charcoal rounded-full" />
 
         {/* Candle body - wax drips effect */}
-        <div className="absolute top-2 left-1/2 -translate-x-1/2 w-6 h-14 bg-gradient-to-b from-cream via-warm-white to-cream/90 rounded-t-sm rounded-b-lg shadow-lg overflow-hidden">
-          {/* Wax drip 1 */}
-          <div className="absolute -top-1 left-0 w-2 h-4 bg-cream/80 rounded-full" />
-          {/* Wax drip 2 */}
-          <div className="absolute -top-0.5 right-0 w-1.5 h-3 bg-cream/70 rounded-full" />
+        <div className={`absolute top-2 left-1/2 -translate-x-1/2 ${s.body} bg-gradient-to-b from-cream via-warm-white to-cream/90 rounded-t-sm rounded-b-lg shadow-lg overflow-hidden`}>
           {/* Subtle shimmer */}
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" />
         </div>
 
         {/* Candle base/holder */}
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-2 bg-gradient-to-b from-gold to-gold-dark rounded-sm shadow-md" />
+        <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 ${s.base} h-1.5 bg-gradient-to-b from-gold to-gold-dark rounded-sm shadow-md`} />
 
         {/* Reflection on surface */}
-        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-10 h-3 bg-gold/10 rounded-full blur-md" />
+        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-8 h-2 bg-gold/10 rounded-full blur-md" />
       </div>
 
       {/* Name with elegant reveal */}
-      <div className={`mt-4 transition-all duration-500 ${isHovered ? 'transform -translate-y-1' : ''}`}>
-        <p className={`text-sm font-medium truncate transition-all duration-300 ${isHovered ? 'text-gold' : 'text-white/70'}`}>
+      <div className={`mt-3 transition-all duration-500 ${isHovered ? 'transform -translate-y-1' : ''}`}>
+        <p className={`${s.text} font-medium truncate transition-all duration-300 max-w-full px-1 ${isHovered ? 'text-gold' : 'text-white/70'}`}>
           {candle.name}
         </p>
-        {isHovered && candle.litAt && (
-          <p className="text-xs text-white/40 mt-1 animate-fade-in">
-            {new Date(candle.litAt).toLocaleDateString()}
-          </p>
-        )}
       </div>
     </div>
   );
@@ -1213,34 +1228,55 @@ const CandleLightingSection = ({ showToast }) => {
   const [candles, setCandles] = useState([]);
   const [name, setName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [newCandleId, setNewCandleId] = useState(null);
   const [showLightingEffect, setShowLightingEffect] = useState(false);
   const { ref: countRef, count: animatedCount } = useCountUp(candles.length, 2000);
 
-  // Load candles from localStorage on mount (shared across all visitors via localStorage sync concept)
-  // In production, this would fetch from a real database
-  useEffect(() => {
-    const saved = localStorage.getItem('memorial-candles-shared');
-    if (saved) {
-      setCandles(JSON.parse(saved));
-    } else {
-      // Initialize with some memorial candles
-      const initialCandles = [
-        { id: 1, name: 'The Family', litAt: '2025-01-01T00:00:00Z' },
-        { id: 2, name: 'With Love', litAt: '2025-01-01T00:00:00Z' },
-        { id: 3, name: 'Forever Remembered', litAt: '2025-01-01T00:00:00Z' },
-      ];
-      setCandles(initialCandles);
-      localStorage.setItem('memorial-candles-shared', JSON.stringify(initialCandles));
-    }
-  }, []);
+  // Determine candle size based on total count
+  const getCandleSize = (totalCount) => {
+    if (totalCount <= 8) return 'large';
+    if (totalCount <= 16) return 'normal';
+    if (totalCount <= 32) return 'medium';
+    if (totalCount <= 64) return 'small';
+    return 'tiny';
+  };
 
-  // Sync candles to localStorage whenever they change
+  // Get grid columns based on candle count
+  const getGridCols = (totalCount) => {
+    if (totalCount <= 8) return 'grid-cols-4 sm:grid-cols-4 md:grid-cols-8';
+    if (totalCount <= 16) return 'grid-cols-4 sm:grid-cols-6 md:grid-cols-8';
+    if (totalCount <= 32) return 'grid-cols-5 sm:grid-cols-8 md:grid-cols-10';
+    if (totalCount <= 64) return 'grid-cols-6 sm:grid-cols-10 md:grid-cols-12';
+    return 'grid-cols-8 sm:grid-cols-12 md:grid-cols-16';
+  };
+
+  // Load candles - combine initial candles with user-added ones from localStorage
   useEffect(() => {
-    if (candles.length > 0) {
-      localStorage.setItem('memorial-candles-shared', JSON.stringify(candles));
-    }
-  }, [candles]);
+    const loadCandles = () => {
+      // Get user-added candles from localStorage
+      const savedUserCandles = localStorage.getItem('memorial-user-candles');
+      const userCandles = savedUserCandles ? JSON.parse(savedUserCandles) : [];
+
+      // Combine initial candles with user-added candles
+      // User candles appear first (newest first), then initial candles
+      const allCandles = [...userCandles, ...INITIAL_CANDLES];
+      setCandles(allCandles);
+      setIsLoading(false);
+    };
+
+    loadCandles();
+
+    // Listen for changes from other tabs on same device
+    const handleStorageChange = (e) => {
+      if (e.key === 'memorial-user-candles') {
+        loadCandles();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   const lightCandle = async (e) => {
     e.preventDefault();
@@ -1255,8 +1291,16 @@ const CandleLightingSection = ({ showToast }) => {
       litAt: new Date().toISOString()
     };
 
+    // Get existing user candles and add new one
+    const savedUserCandles = localStorage.getItem('memorial-user-candles');
+    const userCandles = savedUserCandles ? JSON.parse(savedUserCandles) : [];
+    const updatedUserCandles = [newCandle, ...userCandles];
+
+    // Save to localStorage for persistence
+    localStorage.setItem('memorial-user-candles', JSON.stringify(updatedUserCandles));
+
+    // Submit to Formspree for permanent record and notifications
     try {
-      // Submit to Formspree for permanent record
       await fetch(FORMSPREE_CANDLES, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1267,12 +1311,12 @@ const CandleLightingSection = ({ showToast }) => {
         })
       });
     } catch (error) {
-      console.log('Formspree submission failed, but candle still added locally');
+      console.log('Formspree submission failed, but candle saved locally');
     }
 
-    // Add to local state with animation
+    // Update UI with animation
     setTimeout(() => {
-      setCandles(prev => [newCandle, ...prev]);
+      setCandles([newCandle, ...candles]);
       setNewCandleId(newCandle.id);
       setName('');
       setIsSubmitting(false);
@@ -1283,6 +1327,9 @@ const CandleLightingSection = ({ showToast }) => {
       setTimeout(() => setNewCandleId(null), 2000);
     }, 1500);
   };
+
+  const candleSize = getCandleSize(candles.length);
+  const gridCols = getGridCols(candles.length);
 
   return (
     <section id="candles" className="py-24 md:py-32 bg-gradient-to-b from-charcoal via-[#1a1520] to-charcoal-light text-white relative overflow-hidden">
@@ -1436,26 +1483,36 @@ const CandleLightingSection = ({ showToast }) => {
           </div>
         </AnimatedSection>
 
-        {/* Candles Grid - Enhanced */}
+        {/* Candles Grid - Dynamic sizing based on count */}
         <AnimatedSection delay={400}>
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-6 md:gap-8">
-            {candles.slice(0, 40).map((candle, index) => (
-              <AnimatedCandle
-                key={candle.id}
-                candle={candle}
-                index={index}
-                isNew={candle.id === newCandleId}
-              />
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="flex flex-col items-center gap-4">
+                <div className="w-12 h-12 border-4 border-gold/30 border-t-gold rounded-full animate-spin" />
+                <p className="text-white/50">Loading candles...</p>
+              </div>
+            </div>
+          ) : (
+            <div className={`grid ${gridCols} gap-4 md:gap-6 transition-all duration-500`}>
+              {candles.slice(0, 100).map((candle, index) => (
+                <AnimatedCandle
+                  key={candle.id}
+                  candle={candle}
+                  index={index}
+                  isNew={candle.id === newCandleId}
+                  size={candleSize}
+                />
+              ))}
+            </div>
+          )}
         </AnimatedSection>
 
-        {candles.length > 40 && (
+        {candles.length > 100 && (
           <AnimatedSection delay={500}>
             <div className="text-center mt-12">
               <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-white/5 border border-white/10">
                 <span className="text-2xl">✨</span>
-                <p className="text-white/50">+{candles.length - 40} more candles glowing in her memory</p>
+                <p className="text-white/50">+{candles.length - 100} more candles glowing in her memory</p>
                 <span className="text-2xl">✨</span>
               </div>
             </div>
