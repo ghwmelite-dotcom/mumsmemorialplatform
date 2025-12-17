@@ -504,14 +504,41 @@ const AmbientMusicPlayer = () => {
           </div>
 
           {/* Expanded View - Video Player */}
-          <div className={`overflow-hidden transition-all duration-300 ease-out ${isExpanded ? 'max-h-64 opacity-100' : 'max-h-0 opacity-0'}`}>
+          <div className={`overflow-hidden transition-all duration-300 ease-out ${isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
             <div className="px-2 pb-2 border-t border-white/10">
-              <div className="py-2">
-                <p className="text-white font-medium text-xs truncate">{currentTrack.title}</p>
-                <p className="text-white/50 text-[10px]">{currentTrack.artist}</p>
+              {/* Track List */}
+              <div className="py-2 space-y-1">
+                <p className="text-white/50 text-[10px] uppercase tracking-wide mb-1">Select Track</p>
+                {MUSIC_PLAYLIST.map((track, index) => (
+                  <button
+                    key={track.id}
+                    onClick={() => setCurrentTrackIndex(index)}
+                    className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-left transition-all ${
+                      currentTrackIndex === index
+                        ? 'bg-gold/20 text-gold'
+                        : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
+                    }`}
+                  >
+                    {currentTrackIndex === index && !isMuted ? (
+                      <div className="flex items-end gap-0.5 h-3 w-4">
+                        {[...Array(3)].map((_, i) => (
+                          <div
+                            key={i}
+                            className="w-0.5 bg-gold rounded-full animate-equalizer"
+                            style={{ animationDelay: `${i * 0.15}s`, height: '3px' }}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-[10px] w-4 text-center">{index + 1}</span>
+                    )}
+                    <span className="text-xs truncate flex-1">{track.title}</span>
+                  </button>
+                ))}
               </div>
 
-              <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-black/50">
+              {/* Now Playing Video */}
+              <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-black/50 mt-2">
                 <iframe
                   key={`${currentTrack.id}-${isMuted ? 'muted' : 'unmuted'}`}
                   width="100%"
@@ -526,14 +553,14 @@ const AmbientMusicPlayer = () => {
               </div>
 
               {/* Shuffle Control */}
-              <div className="flex items-center justify-center mt-2 px-1">
+              <div className="flex items-center justify-center mt-2">
                 <button
                   onClick={shuffleTrack}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white/70 hover:text-white transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white/60 hover:text-white transition-colors"
                   title="Shuffle to random track"
                 >
-                  <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg>
-                  <span className="text-[10px]">Shuffle ({currentTrackIndex + 1}/{MUSIC_PLAYLIST.length})</span>
+                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg>
+                  <span className="text-[10px]">Shuffle</span>
                 </button>
               </div>
             </div>
