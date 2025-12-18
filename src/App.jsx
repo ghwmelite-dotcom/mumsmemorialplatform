@@ -1,5 +1,11 @@
-import { useState, useEffect, useRef, useCallback, createContext, useContext } from 'react';
+import { useState, useEffect, useRef, useCallback, createContext, useContext, memo, useMemo, lazy, Suspense } from 'react';
 import translations from './translations';
+
+// Detect reduced motion preference
+const prefersReducedMotion = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// Detect mobile device for performance optimizations
+const isMobile = typeof window !== 'undefined' && (window.innerWidth < 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
 
 // ============================================
 // CONFIGURATION - Update these values
@@ -195,13 +201,25 @@ const useScrollReveal = (options = {}) => {
 const useMouseParallax = (intensity = 0.02) => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   useEffect(() => {
+    // Skip parallax on mobile for better performance
+    if (isMobile || prefersReducedMotion) return;
+
+    let rafId;
     const handleMouseMove = (e) => {
-      const x = (e.clientX - window.innerWidth / 2) * intensity;
-      const y = (e.clientY - window.innerHeight / 2) * intensity;
-      setPosition({ x, y });
+      // Throttle with RAF for smoother performance
+      if (rafId) return;
+      rafId = requestAnimationFrame(() => {
+        const x = (e.clientX - window.innerWidth / 2) * intensity;
+        const y = (e.clientY - window.innerHeight / 2) * intensity;
+        setPosition({ x, y });
+        rafId = null;
+      });
     };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      if (rafId) cancelAnimationFrame(rafId);
+    };
   }, [intensity]);
   return position;
 };
@@ -238,20 +256,24 @@ const useCountUp = (end, duration = 2000, start = 0) => {
 // DECORATIVE ELEMENTS
 // ============================================
 
-const FloatingPetals = () => {
-  const petals = Array.from({ length: 15 }, (_, i) => ({
+const FloatingPetals = memo(() => {
+  // Reduce particles on mobile for better performance
+  const petalCount = isMobile ? 6 : 15;
+  const petals = useMemo(() => Array.from({ length: petalCount }, (_, i) => ({
     id: i,
     size: Math.random() * 20 + 10,
     x: Math.random() * 100,
     delay: Math.random() * 15,
     duration: Math.random() * 20 + 20,
     rotation: Math.random() * 360
-  }));
+  })), [petalCount]);
+
+  if (prefersReducedMotion) return null;
 
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
       {petals.map((petal) => (
-        <div key={petal.id} className="absolute animate-petal-fall opacity-40" style={{ left: `${petal.x}%`, top: '-5%', animationDelay: `${petal.delay}s`, animationDuration: `${petal.duration}s` }}>
+        <div key={petal.id} className="absolute animate-petal-fall opacity-40 will-change-transform" style={{ left: `${petal.x}%`, top: '-5%', animationDelay: `${petal.delay}s`, animationDuration: `${petal.duration}s` }}>
           <svg width={petal.size} height={petal.size} viewBox="0 0 24 24" style={{ transform: `rotate(${petal.rotation}deg)` }}>
             <ellipse cx="12" cy="12" rx="4" ry="10" fill="rgba(212,175,55,0.3)" />
           </svg>
@@ -259,32 +281,89 @@ const FloatingPetals = () => {
       ))}
     </div>
   );
-};
+});
 
-const SoftGradientOrbs = () => {
+const SoftGradientOrbs = memo(() => {
   const mousePos = useMouseParallax(0.015);
+
+  // Simpler orbs on mobile
+  if (isMobile) {
+    return (
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute w-[400px] h-[400px] rounded-full blur-[80px] opacity-50" style={{ background: 'radial-gradient(circle, rgba(212,175,55,0.15) 0%, transparent 60%)', top: '-10%', right: '-10%' }} />
+        <div className="absolute w-[300px] h-[300px] rounded-full blur-[60px] opacity-50" style={{ background: 'radial-gradient(circle, rgba(139,21,56,0.08) 0%, transparent 60%)', bottom: '0%', left: '-5%' }} />
+      </div>
+    );
+  }
+
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      <div className="absolute w-[800px] h-[800px] rounded-full blur-[150px] animate-float-slow" style={{ background: 'radial-gradient(circle, rgba(212,175,55,0.15) 0%, transparent 60%)', top: '-20%', right: '-20%', transform: `translate(${mousePos.x}px, ${mousePos.y}px)` }} />
-      <div className="absolute w-[600px] h-[600px] rounded-full blur-[120px] animate-float-slow-reverse" style={{ background: 'radial-gradient(circle, rgba(139,21,56,0.08) 0%, transparent 60%)', bottom: '-10%', left: '-10%', transform: `translate(${-mousePos.x}px, ${-mousePos.y}px)` }} />
+      <div className="absolute w-[800px] h-[800px] rounded-full blur-[150px] animate-float-slow will-change-transform" style={{ background: 'radial-gradient(circle, rgba(212,175,55,0.15) 0%, transparent 60%)', top: '-20%', right: '-20%', transform: `translate(${mousePos.x}px, ${mousePos.y}px)` }} />
+      <div className="absolute w-[600px] h-[600px] rounded-full blur-[120px] animate-float-slow-reverse will-change-transform" style={{ background: 'radial-gradient(circle, rgba(139,21,56,0.08) 0%, transparent 60%)', bottom: '-10%', left: '-10%', transform: `translate(${-mousePos.x}px, ${-mousePos.y}px)` }} />
       <div className="absolute w-[500px] h-[500px] rounded-full blur-[100px] animate-pulse-soft" style={{ background: 'radial-gradient(circle, rgba(26,93,26,0.08) 0%, transparent 60%)', top: '40%', left: '30%' }} />
     </div>
   );
-};
+});
 
-const KenteBorder = ({ className = '', animated = true }) => (
-  <div className={`flex items-center justify-center gap-1 overflow-hidden ${className}`}>
-    <div className={`flex gap-1 ${animated ? 'animate-kente-shimmer' : ''}`}>
-      {Array.from({ length: 40 }).map((_, i) => (
-        <div key={i} className="flex gap-0.5 flex-shrink-0">
-          <div className="w-3 h-2 bg-gradient-to-b from-gold to-gold-dark rounded-sm transition-transform hover:scale-110" />
-          <div className="w-1.5 h-2 bg-forest rounded-sm" />
-          <div className="w-1.5 h-2 bg-burgundy rounded-sm" />
-        </div>
-      ))}
+const KenteBorder = memo(({ className = '', animated = true }) => {
+  // Reduce Kente elements on mobile
+  const elementCount = isMobile ? 20 : 40;
+  const shouldAnimate = animated && !prefersReducedMotion;
+
+  return (
+    <div className={`flex items-center justify-center gap-1 overflow-hidden ${className}`}>
+      <div className={`flex gap-1 ${shouldAnimate ? 'animate-kente-shimmer' : ''}`}>
+        {Array.from({ length: elementCount }).map((_, i) => (
+          <div key={i} className="flex gap-0.5 flex-shrink-0">
+            <div className="w-3 h-2 bg-gradient-to-b from-gold to-gold-dark rounded-sm" />
+            <div className="w-1.5 h-2 bg-forest rounded-sm" />
+            <div className="w-1.5 h-2 bg-burgundy rounded-sm" />
+          </div>
+        ))}
+      </div>
     </div>
-  </div>
-);
+  );
+});
+
+// Optimized lazy loading image component
+const LazyImage = memo(({ src, alt, className = '', ...props }) => {
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [isInView, setIsInView] = useState(false);
+  const imgRef = useRef(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsInView(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '100px' }
+    );
+    if (imgRef.current) observer.observe(imgRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div ref={imgRef} className={`relative ${className}`}>
+      {!isLoaded && (
+        <div className="absolute inset-0 bg-gradient-to-br from-cream to-warm-gray/20 animate-pulse" />
+      )}
+      {isInView && (
+        <img
+          src={src}
+          alt={alt}
+          loading="lazy"
+          decoding="async"
+          onLoad={() => setIsLoaded(true)}
+          className={`transition-opacity duration-500 ${isLoaded ? 'opacity-100' : 'opacity-0'} ${className}`}
+          {...props}
+        />
+      )}
+    </div>
+  );
+});
 
 const CornerOrnament = ({ position = 'top-left' }) => {
   const positions = {
@@ -306,20 +385,23 @@ const CornerOrnament = ({ position = 'top-left' }) => {
 // FEATURE 1: FLOATING PHOTO MEMORIES
 // ============================================
 
-const FloatingPhotoMemories = () => {
-  const photos = [
+const FloatingPhotoMemories = memo(() => {
+  const photos = useMemo(() => [
     { src: '/photos/barclays-1971.jpeg', rotation: -8, x: 5, y: 15, delay: 0, duration: 7 },
     { src: '/photos/portrait-1976.jpeg', rotation: 5, x: 85, y: 20, delay: 1, duration: 8 },
     { src: '/photos/with-baby-oz-1985.jpeg', rotation: -5, x: 10, y: 70, delay: 2, duration: 6 },
     { src: '/photos/cultural-day-barclays.jpeg', rotation: 8, x: 80, y: 65, delay: 1.5, duration: 9 },
-  ];
+  ], []);
+
+  // Skip animations if reduced motion preferred
+  if (prefersReducedMotion) return null;
 
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none hidden md:block">
       {photos.map((photo, i) => (
         <div
           key={i}
-          className="absolute animate-float-photo opacity-20 hover:opacity-40 transition-opacity duration-500"
+          className="absolute animate-float-photo opacity-20 hover:opacity-40 transition-opacity duration-500 will-change-transform"
           style={{
             left: `${photo.x}%`,
             top: `${photo.y}%`,
@@ -332,6 +414,8 @@ const FloatingPhotoMemories = () => {
             <img
               src={photo.src}
               alt=""
+              loading="lazy"
+              decoding="async"
               className="w-full h-full object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-gold/10 to-transparent" />
@@ -340,31 +424,35 @@ const FloatingPhotoMemories = () => {
       ))}
     </div>
   );
-};
+});
 
 // ============================================
 // FEATURE 4: GOLDEN RAIN PARTICLES
 // ============================================
 
-const GoldenRainParticles = ({ intensity = 'medium' }) => {
-  const counts = { light: 15, medium: 25, heavy: 40 };
-  const count = counts[intensity] || 25;
+const GoldenRainParticles = memo(({ intensity = 'medium' }) => {
+  // Reduce particles on mobile, skip if reduced motion
+  if (prefersReducedMotion) return null;
 
-  const particles = Array.from({ length: count }, (_, i) => ({
+  const counts = { light: 15, medium: 25, heavy: 40 };
+  const mobileReduction = isMobile ? 0.4 : 1;
+  const count = Math.floor((counts[intensity] || 25) * mobileReduction);
+
+  const particles = useMemo(() => Array.from({ length: count }, (_, i) => ({
     id: i,
     x: Math.random() * 100,
     size: Math.random() * 4 + 2,
     delay: Math.random() * 10,
     duration: Math.random() * 15 + 10,
     opacity: Math.random() * 0.4 + 0.1,
-  }));
+  })), [count]);
 
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
       {particles.map((p) => (
         <div
           key={p.id}
-          className="absolute animate-golden-rain"
+          className="absolute animate-golden-rain will-change-transform"
           style={{
             left: `${p.x}%`,
             top: '-20px',
@@ -379,7 +467,7 @@ const GoldenRainParticles = ({ intensity = 'medium' }) => {
       ))}
     </div>
   );
-};
+});
 
 // ============================================
 // FEATURE 5: AMBIENT MUSIC PLAYER (YouTube-based)
@@ -1120,12 +1208,15 @@ const SectionHeading = ({ eyebrow, title, subtitle, light = false }) => {
   );
 };
 
-const Card = ({ children, className = '', hover = true, delay = 0, tilt = false }) => {
+const Card = memo(({ children, className = '', hover = true, delay = 0, tilt = false }) => {
   const [ref, isVisible] = useScrollReveal();
   const [tiltStyle, setTiltStyle] = useState({});
 
-  const handleMouseMove = (e) => {
-    if (!tilt) return;
+  // Disable tilt on mobile or reduced motion
+  const enableTilt = tilt && !isMobile && !prefersReducedMotion;
+
+  const handleMouseMove = useCallback((e) => {
+    if (!enableTilt) return;
     const card = e.currentTarget;
     const rect = card.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -1135,17 +1226,17 @@ const Card = ({ children, className = '', hover = true, delay = 0, tilt = false 
     const rotateX = (y - centerY) / 20;
     const rotateY = (centerX - x) / 20;
     setTiltStyle({ transform: `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-5px)` });
-  };
+  }, [enableTilt]);
 
-  const handleMouseLeave = () => {
-    if (!tilt) return;
+  const handleMouseLeave = useCallback(() => {
+    if (!enableTilt) return;
     setTiltStyle({});
-  };
+  }, [enableTilt]);
 
   return (
     <div
       ref={ref}
-      className={`bg-white rounded-2xl shadow-soft transition-all duration-500 ${hover ? 'hover:shadow-elevated' : ''} ${tilt ? 'card-tilt' : hover ? 'hover:-translate-y-2' : ''} ${className}`}
+      className={`bg-white rounded-2xl shadow-soft transition-all duration-500 ${hover ? 'hover:shadow-elevated' : ''} ${enableTilt ? 'card-tilt' : hover ? 'hover:-translate-y-2' : ''} ${className}`}
       style={{
         opacity: isVisible ? 1 : 0,
         transform: isVisible ? (tiltStyle.transform || 'translateY(0)') : 'translateY(30px)',
@@ -1158,14 +1249,14 @@ const Card = ({ children, className = '', hover = true, delay = 0, tilt = false 
       {children}
     </div>
   );
-};
+});
 
-const Button = ({ children, variant = 'primary', className = '', onClick, disabled = false, type = 'button' }) => {
-  const variants = {
+const Button = memo(({ children, variant = 'primary', className = '', onClick, disabled = false, type = 'button' }) => {
+  const variants = useMemo(() => ({
     primary: 'bg-gradient-to-r from-gold to-gold-dark text-white hover:shadow-gold-glow hover:scale-105',
     secondary: 'bg-white text-gold-dark border-2 border-gold hover:bg-gold hover:text-white hover:scale-105',
     outline: 'bg-transparent border-2 border-white text-white hover:bg-white hover:text-charcoal hover:scale-105'
-  };
+  }), []);
   return (
     <button
       type={type}
@@ -1176,7 +1267,7 @@ const Button = ({ children, variant = 'primary', className = '', onClick, disabl
       <span className="relative z-10 flex items-center justify-center gap-2">{children}</span>
     </button>
   );
-};
+});
 
 const Toast = ({ message, type = 'success', onClose }) => {
   useEffect(() => {
@@ -1303,15 +1394,25 @@ const MusicPlayer = () => {
 // NAVIGATION
 // ============================================
 
-const Navigation = ({ activeSection, setActiveSection }) => {
+const Navigation = memo(({ activeSection, setActiveSection }) => {
   const { language, toggleLanguage, t } = useLanguage();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 50);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    let rafId;
+    const handleScroll = () => {
+      if (rafId) return;
+      rafId = requestAnimationFrame(() => {
+        setIsScrolled(window.scrollY > 50);
+        rafId = null;
+      });
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (rafId) cancelAnimationFrame(rafId);
+    };
   }, []);
 
   const navItems = [
@@ -1372,13 +1473,13 @@ const Navigation = ({ activeSection, setActiveSection }) => {
       </div>
     </nav>
   );
-};
+});
 
 // ============================================
 // HERO SECTION
 // ============================================
 
-const HeroSection = () => {
+const HeroSection = memo(() => {
   const { t } = useLanguage();
   const [loaded, setLoaded] = useState(false);
   useEffect(() => setLoaded(true), []);
@@ -1472,13 +1573,13 @@ const HeroSection = () => {
       </div>
     </section>
   );
-};
+});
 
 // ============================================
 // LIFE STORY SECTION
 // ============================================
 
-const LifeSection = () => {
+const LifeSection = memo(() => {
   const { t } = useLanguage();
   const [lineRef, lineVisible] = useScrollReveal();
 
@@ -1550,14 +1651,14 @@ const LifeSection = () => {
       </div>
     </section>
   );
-};
+});
 
 // ============================================
 // FAMILY TREE SECTION - SPECTACULAR EDITION
 // ============================================
 
 // Floating Golden Leaf Particle
-const GoldenLeaf = ({ delay, duration, startX }) => (
+const GoldenLeaf = memo(({ delay, duration, startX }) => (
   <div
     className="absolute w-3 h-3 pointer-events-none"
     style={{
@@ -1571,10 +1672,10 @@ const GoldenLeaf = ({ delay, duration, startX }) => (
       <path fill="currentColor" d="M17,8C8,10 5.9,16.17 3.82,21.34L5.71,22L6.66,19.7C7.14,19.87 7.64,20 8,20C19,20 22,3 22,3C21,5 14,5.25 9,6.25C4,7.25 2,11.5 2,13.5C2,15.5 3.75,17.25 3.75,17.25C7,8 17,8 17,8Z"/>
     </svg>
   </div>
-);
+));
 
 // Ethereal Orb Component for Family Members
-const FamilyOrb = ({ member, size = 'lg', onClick, isMatriarch = false, delay = 0 }) => {
+const FamilyOrb = memo(({ member, size = 'lg', onClick, isMatriarch = false, delay = 0 }) => {
   const [isHovered, setIsHovered] = useState(false);
 
   const sizeClasses = {
@@ -1692,10 +1793,10 @@ const FamilyOrb = ({ member, size = 'lg', onClick, isMatriarch = false, delay = 
       </div>
     </button>
   );
-};
+});
 
 // Animated Branch Connection
-const TreeBranch = ({ isVisible, delay = 0, direction = 'down', length = 'md' }) => {
+const TreeBranch = memo(({ isVisible, delay = 0, direction = 'down', length = 'md' }) => {
   const lengths = { sm: 'h-8', md: 'h-16', lg: 'h-24' };
 
   if (direction === 'horizontal') {
@@ -1740,9 +1841,9 @@ const TreeBranch = ({ isVisible, delay = 0, direction = 'down', length = 'md' })
       />
     </div>
   );
-};
+});
 
-const FamilyTreeSection = () => {
+const FamilyTreeSection = memo(() => {
   const { t } = useLanguage();
   const [selectedMember, setSelectedMember] = useState(null);
   const [sectionRef, isVisible] = useScrollReveal();
@@ -1997,13 +2098,13 @@ const FamilyTreeSection = () => {
       </div>
     </section>
   );
-};
+});
 
 // ============================================
 // PHOTO TIMELINE SECTION
 // ============================================
 
-const PhotoTimelineSection = () => {
+const PhotoTimelineSection = memo(() => {
   const { t } = useLanguage();
   const [selectedPhoto, setSelectedPhoto] = useState(null);
   const [timelineRef, timelineVisible] = useScrollReveal();
@@ -2160,7 +2261,7 @@ const PhotoTimelineSection = () => {
       )}
     </section>
   );
-};
+});
 
 // ============================================
 // CANDLE LIGHTING SECTION
@@ -2185,85 +2286,100 @@ const DEFAULT_CANDLES = [
 ];
 
 // Animated Candle Component - Now with dynamic sizing
-const AnimatedCandle = ({ candle, index, isNew, size = 'normal' }) => {
+const AnimatedCandle = memo(({ candle, index, isNew, size = 'normal' }) => {
   const [isHovered, setIsHovered] = useState(false);
 
-  // Size configurations based on total candle count
-  const sizeConfig = {
+  // Size configurations based on total candle count - memoized
+  const sizeConfig = useMemo(() => ({
     large: { wrapper: 'w-14 h-24', flame: 'w-5 h-8', body: 'w-7 h-16', base: 'w-10', text: 'text-sm' },
     normal: { wrapper: 'w-12 h-20', flame: 'w-4 h-7', body: 'w-6 h-14', base: 'w-8', text: 'text-sm' },
     medium: { wrapper: 'w-10 h-16', flame: 'w-3 h-5', body: 'w-5 h-11', base: 'w-7', text: 'text-xs' },
     small: { wrapper: 'w-8 h-14', flame: 'w-2.5 h-4', body: 'w-4 h-9', base: 'w-6', text: 'text-xs' },
     tiny: { wrapper: 'w-6 h-10', flame: 'w-2 h-3', body: 'w-3 h-7', base: 'w-5', text: 'text-[10px]' },
-  };
+  }), []);
 
   const s = sizeConfig[size] || sizeConfig.normal;
 
+  // Simplify animations on mobile
+  const showComplexEffects = !isMobile && !prefersReducedMotion;
+
   return (
     <div
-      className={`text-center group cursor-pointer transform transition-all duration-700 ${isNew ? 'animate-candle-appear' : ''}`}
+      className={`text-center group cursor-pointer transform transition-all duration-700 ${isNew && !prefersReducedMotion ? 'animate-candle-appear' : ''}`}
       style={{ animationDelay: `${index * 30}ms` }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={() => !isMobile && setIsHovered(true)}
+      onMouseLeave={() => !isMobile && setIsHovered(false)}
       title={`${candle.name} - ${candle.litAt ? new Date(candle.litAt).toLocaleDateString() : ''}`}
     >
       <div className={`relative mx-auto ${s.wrapper}`}>
-        {/* Outer glow - large ambient */}
-        <div className={`absolute -top-8 left-1/2 -translate-x-1/2 w-12 h-12 rounded-full blur-2xl transition-all duration-500 ${isHovered ? 'bg-gold/50 scale-150' : 'bg-gold/20'}`} />
+        {/* Outer glow - only on desktop */}
+        {showComplexEffects && (
+          <div className={`absolute -top-8 left-1/2 -translate-x-1/2 w-12 h-12 rounded-full blur-2xl transition-all duration-500 ${isHovered ? 'bg-gold/50 scale-150' : 'bg-gold/20'}`} />
+        )}
 
-        {/* Middle glow - medium */}
-        <div className={`absolute -top-6 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full blur-xl transition-all duration-300 ${isHovered ? 'bg-orange-400/60' : 'bg-orange-400/30'}`} />
+        {/* Middle glow */}
+        <div className={`absolute -top-6 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full blur-xl ${showComplexEffects ? 'transition-all duration-300' : ''} ${isHovered ? 'bg-orange-400/60' : 'bg-orange-400/30'}`} />
 
-        {/* Inner glow - intense */}
-        <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-4 h-4 bg-yellow-300/50 rounded-full blur-md animate-pulse" style={{ animationDuration: '1.5s' }} />
+        {/* Inner glow - simplified on mobile */}
+        <div className={`absolute -top-4 left-1/2 -translate-x-1/2 w-4 h-4 bg-yellow-300/50 rounded-full blur-md ${showComplexEffects ? 'animate-pulse' : ''}`} style={{ animationDuration: '1.5s' }} />
 
         {/* Flame outer */}
-        <div className={`absolute -top-6 left-1/2 -translate-x-1/2 ${s.flame} bg-gradient-to-t from-orange-500 via-orange-400 to-yellow-300 rounded-full animate-candle-flicker opacity-90 blur-[1px]`} />
+        <div className={`absolute -top-6 left-1/2 -translate-x-1/2 ${s.flame} bg-gradient-to-t from-orange-500 via-orange-400 to-yellow-300 rounded-full ${showComplexEffects ? 'animate-candle-flicker' : ''} opacity-90 blur-[1px]`} />
 
-        {/* Flame middle */}
-        <div className="absolute -top-5 left-1/2 -translate-x-1/2 w-3 h-5 bg-gradient-to-t from-orange-400 via-yellow-400 to-yellow-200 rounded-full animate-candle-flicker-alt opacity-95" />
+        {/* Flame middle - simplified on mobile */}
+        {showComplexEffects && (
+          <div className="absolute -top-5 left-1/2 -translate-x-1/2 w-3 h-5 bg-gradient-to-t from-orange-400 via-yellow-400 to-yellow-200 rounded-full animate-candle-flicker-alt opacity-95" />
+        )}
 
         {/* Flame core */}
-        <div className="absolute -top-4 left-1/2 -translate-x-1/2 w-2 h-3 bg-gradient-to-t from-yellow-300 via-yellow-100 to-white rounded-full animate-candle-flicker-fast" />
+        <div className={`absolute -top-4 left-1/2 -translate-x-1/2 w-2 h-3 bg-gradient-to-t from-yellow-300 via-yellow-100 to-white rounded-full ${showComplexEffects ? 'animate-candle-flicker-fast' : ''}`} />
 
-        {/* Flame tip - white hot */}
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-1 h-2 bg-white rounded-full opacity-90 animate-candle-flicker-fast" />
+        {/* Flame tip - only on desktop */}
+        {showComplexEffects && (
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-1 h-2 bg-white rounded-full opacity-90 animate-candle-flicker-fast" />
+        )}
 
         {/* Wick */}
         <div className="absolute top-1 left-1/2 -translate-x-1/2 w-0.5 h-1.5 bg-charcoal rounded-full" />
 
-        {/* Candle body - wax drips effect */}
+        {/* Candle body */}
         <div className={`absolute top-2 left-1/2 -translate-x-1/2 ${s.body} bg-gradient-to-b from-cream via-warm-white to-cream/90 rounded-t-sm rounded-b-lg shadow-lg overflow-hidden`}>
-          {/* Subtle shimmer */}
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" />
+          {showComplexEffects && (
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer" />
+          )}
         </div>
 
         {/* Candle base/holder */}
         <div className={`absolute bottom-0 left-1/2 -translate-x-1/2 ${s.base} h-1.5 bg-gradient-to-b from-gold to-gold-dark rounded-sm shadow-md`} />
 
-        {/* Reflection on surface */}
-        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-8 h-2 bg-gold/10 rounded-full blur-md" />
+        {/* Reflection - only on desktop */}
+        {showComplexEffects && (
+          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-8 h-2 bg-gold/10 rounded-full blur-md" />
+        )}
       </div>
 
-      {/* Name with elegant reveal */}
-      <div className={`mt-3 transition-all duration-500 ${isHovered ? 'transform -translate-y-1' : ''}`}>
-        <p className={`${s.text} font-medium truncate transition-all duration-300 max-w-full px-1 ${isHovered ? 'text-gold' : 'text-white/70'}`}>
+      {/* Name */}
+      <div className={`mt-3 ${showComplexEffects ? 'transition-all duration-500' : ''} ${isHovered ? 'transform -translate-y-1' : ''}`}>
+        <p className={`${s.text} font-medium truncate max-w-full px-1 ${showComplexEffects ? 'transition-all duration-300' : ''} ${isHovered ? 'text-gold' : 'text-white/70'}`}>
           {candle.name}
         </p>
       </div>
     </div>
   );
-};
+});
 
-// Floating Ember Particle
-const FloatingEmber = ({ delay }) => {
-  const randomX = Math.random() * 100;
-  const randomDuration = 3 + Math.random() * 4;
-  const randomSize = 2 + Math.random() * 4;
+// Floating Ember Particle - memoized with stable random values
+const FloatingEmber = memo(({ delay, seed }) => {
+  // Use seed for stable random values
+  const randomX = useMemo(() => (seed * 37) % 100, [seed]);
+  const randomDuration = useMemo(() => 3 + (seed * 13) % 4, [seed]);
+  const randomSize = useMemo(() => 2 + (seed * 7) % 4, [seed]);
+
+  if (prefersReducedMotion) return null;
 
   return (
     <div
-      className="absolute w-1 h-1 rounded-full animate-float-ember pointer-events-none"
+      className="absolute w-1 h-1 rounded-full animate-float-ember pointer-events-none will-change-transform"
       style={{
         left: `${randomX}%`,
         bottom: '20%',
@@ -2277,9 +2393,9 @@ const FloatingEmber = ({ delay }) => {
       }}
     />
   );
-};
+});
 
-const CandleLightingSection = ({ showToast }) => {
+const CandleLightingSection = memo(({ showToast }) => {
   const { t } = useLanguage();
   const [candles, setCandles] = useState(DEFAULT_CANDLES);
   const [name, setName] = useState('');
@@ -2600,7 +2716,7 @@ const CandleLightingSection = ({ showToast }) => {
       </div>
     </section>
   );
-};
+});
 
 // ============================================
 // FLOATING LANTERNS SECTION
@@ -2622,7 +2738,7 @@ const DEFAULT_LANTERNS = [
 ];
 
 // Individual Floating Lantern Component
-const FloatingLantern = ({ lantern, index, isNew, totalCount }) => {
+const FloatingLantern = memo(({ lantern, index, isNew, totalCount }) => {
   const [isHovered, setIsHovered] = useState(false);
 
   // Calculate position - spread lanterns across the sky
@@ -2696,9 +2812,9 @@ const FloatingLantern = ({ lantern, index, isNew, totalCount }) => {
       </div>
     </div>
   );
-};
+});
 
-const FloatingLanternsSection = ({ showToast }) => {
+const FloatingLanternsSection = memo(({ showToast }) => {
   const { t } = useLanguage();
   const [lanterns, setLanterns] = useState(DEFAULT_LANTERNS);
   const [name, setName] = useState('');
@@ -2979,13 +3095,13 @@ const FloatingLanternsSection = ({ showToast }) => {
       </div>
     </section>
   );
-};
+});
 
 // ============================================
 // LIVE STREAM SECTION
 // ============================================
 
-const LiveStreamSection = () => {
+const LiveStreamSection = memo(() => {
   const { t } = useLanguage();
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const [prevSeconds, setPrevSeconds] = useState(0);
@@ -3102,13 +3218,13 @@ const LiveStreamSection = () => {
       </div>
     </section>
   );
-};
+});
 
 // ============================================
 // AI TRIBUTE WRITER MODAL
 // ============================================
 
-const AITributeWriterModal = ({ isOpen, onClose, onUseTribute, userName }) => {
+const AITributeWriterModal = memo(({ isOpen, onClose, onUseTribute, userName }) => {
   const { t, language } = useLanguage();
   const [step, setStep] = useState(1);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -3403,13 +3519,13 @@ const AITributeWriterModal = ({ isOpen, onClose, onUseTribute, userName }) => {
       </div>
     </div>
   );
-};
+});
 
 // ============================================
 // TRIBUTES SECTION (Guestbook + Media)
 // ============================================
 
-const TributesSection = ({ showToast }) => {
+const TributesSection = memo(({ showToast }) => {
   const { t, language } = useLanguage();
   const [entries, setEntries] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -3642,13 +3758,13 @@ const TributesSection = ({ showToast }) => {
       </div>
     </section>
   );
-};
+});
 
 // ============================================
 // DONATION SECTION
 // ============================================
 
-const DonationSection = ({ showToast }) => {
+const DonationSection = memo(({ showToast }) => {
   const { t, language } = useLanguage();
   const [copiedId, setCopiedId] = useState(null);
   const [showPaystack, setShowPaystack] = useState(false);
@@ -3885,13 +4001,13 @@ const DonationSection = ({ showToast }) => {
       </div>
     </section>
   );
-};
+});
 
 // ============================================
 // CONTACT SECTION
 // ============================================
 
-const ContactSection = ({ showToast }) => {
+const ContactSection = memo(({ showToast }) => {
   const { t } = useLanguage();
   const [formData, setFormData] = useState({ name: '', phone: '', message: '', attending: '', guests: '1' });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -4001,13 +4117,13 @@ const ContactSection = ({ showToast }) => {
       </div>
     </section>
   );
-};
+});
 
 // ============================================
 // FOOTER
 // ============================================
 
-const Footer = () => {
+const Footer = memo(() => {
   const { t } = useLanguage();
   const [footerRef, footerVisible] = useScrollReveal();
 
@@ -4136,7 +4252,7 @@ const Footer = () => {
       </div>
     </footer>
   );
-};
+});
 
 // ============================================
 // MAIN APP

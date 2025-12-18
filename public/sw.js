@@ -1,90 +1,152 @@
-// Service Worker for Grandma Josephine Memorial PWA
-const CACHE_NAME = 'grandma-memorial-v1';
-const STATIC_ASSETS = [
+// Service Worker for Memorial Platform - Blistering Fast Edition
+const CACHE_NAME = 'memorial-v2';
+const RUNTIME_CACHE = 'memorial-runtime-v2';
+const IMAGE_CACHE = 'memorial-images-v2';
+
+// Critical assets to precache
+const PRECACHE_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/favicon.svg'
+  '/favicon.svg',
+  '/icons/icon.svg',
+  '/icons/icon-192x192.png'
 ];
 
-// Install event - cache static assets
+// Install - precache critical assets
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS);
-    })
+    caches.open(CACHE_NAME)
+      .then((cache) => cache.addAll(PRECACHE_ASSETS))
+      .then(() => self.skipWaiting())
   );
-  self.skipWaiting();
 });
 
-// Activate event - clean up old caches
+// Activate - clean old caches
 self.addEventListener('activate', (event) => {
+  const currentCaches = [CACHE_NAME, RUNTIME_CACHE, IMAGE_CACHE];
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames
-          .filter((name) => name !== CACHE_NAME)
+          .filter((name) => !currentCaches.includes(name))
           .map((name) => caches.delete(name))
       );
-    })
+    }).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
-// Fetch event - network first, fallback to cache
+// Fetch - aggressive caching strategies
 self.addEventListener('fetch', (event) => {
-  // Skip non-GET requests
-  if (event.request.method !== 'GET') return;
+  const { request } = event;
+  const url = new URL(request.url);
 
-  // Skip cross-origin requests
-  if (!event.request.url.startsWith(self.location.origin)) return;
+  // Skip non-GET
+  if (request.method !== 'GET') return;
 
-  // Skip Firebase and API requests
-  if (event.request.url.includes('firestore') ||
-      event.request.url.includes('googleapis') ||
-      event.request.url.includes('firebase')) {
+  // Skip API endpoints - always fresh
+  if (url.hostname.includes('workers.dev') ||
+      url.hostname.includes('formspree.io') ||
+      url.hostname.includes('paystack.co') ||
+      url.hostname.includes('anthropic.com') ||
+      url.hostname.includes('youtube.com') ||
+      url.hostname.includes('ytimg.com')) {
     return;
   }
 
-  event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        // Clone the response before caching
-        const responseClone = response.clone();
+  // IMAGES - Cache first, background update (fastest for repeat visits)
+  if (request.destination === 'image' ||
+      url.pathname.match(/\.(jpg|jpeg|png|gif|webp|svg|ico)$/i)) {
+    event.respondWith(
+      caches.open(IMAGE_CACHE).then((cache) => {
+        return cache.match(request).then((cached) => {
+          const fetchPromise = fetch(request).then((response) => {
+            if (response.ok) cache.put(request, response.clone());
+            return response;
+          }).catch(() => cached);
 
-        // Cache successful responses
-        if (response.status === 200) {
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseClone);
-          });
-        }
-
-        return response;
+          return cached || fetchPromise;
+        });
       })
-      .catch(() => {
-        // Fallback to cache on network failure
-        return caches.match(event.request).then((cachedResponse) => {
-          if (cachedResponse) {
-            return cachedResponse;
-          }
+    );
+    return;
+  }
 
-          // Return offline page for navigation requests
-          if (event.request.mode === 'navigate') {
-            return caches.match('/');
-          }
-
-          return new Response('Offline', {
-            status: 503,
-            statusText: 'Service Unavailable'
+  // FONTS - Cache first (fonts rarely change)
+  if (url.hostname.includes('fonts.googleapis.com') ||
+      url.hostname.includes('fonts.gstatic.com') ||
+      request.destination === 'font') {
+    event.respondWith(
+      caches.open(RUNTIME_CACHE).then((cache) => {
+        return cache.match(request).then((cached) => {
+          if (cached) return cached;
+          return fetch(request).then((response) => {
+            if (response.ok) cache.put(request, response.clone());
+            return response;
           });
         });
       })
+    );
+    return;
+  }
+
+  // JS/CSS - Stale while revalidate (fast + fresh)
+  if (request.destination === 'script' ||
+      request.destination === 'style' ||
+      url.pathname.match(/\.(js|css)$/i)) {
+    event.respondWith(
+      caches.open(RUNTIME_CACHE).then((cache) => {
+        return cache.match(request).then((cached) => {
+          const fetchPromise = fetch(request).then((response) => {
+            if (response.ok) cache.put(request, response.clone());
+            return response;
+          }).catch(() => cached);
+
+          return cached || fetchPromise;
+        });
+      })
+    );
+    return;
+  }
+
+  // HTML/Navigation - Network first, cache fallback
+  if (request.destination === 'document' || request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(RUNTIME_CACHE).then((cache) => cache.put(request, clone));
+          }
+          return response;
+        })
+        .catch(() => caches.match(request).then((cached) => cached || caches.match('/')))
+    );
+    return;
+  }
+
+  // Default - Network first
+  event.respondWith(
+    fetch(request)
+      .then((response) => {
+        if (response.ok) {
+          const clone = response.clone();
+          caches.open(RUNTIME_CACHE).then((cache) => cache.put(request, clone));
+        }
+        return response;
+      })
+      .catch(() => caches.match(request))
   );
 });
 
-// Handle messages from the main thread
-self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
+// Background sync for offline form submissions
+self.addEventListener('sync', (event) => {
+  if (event.tag === 'sync-tributes') {
+    event.waitUntil(syncTributes());
   }
 });
+
+async function syncTributes() {
+  // Placeholder for offline tribute sync
+  console.log('Syncing offline tributes...');
+}
