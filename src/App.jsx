@@ -51,17 +51,19 @@ const MUSIC_CONFIG = {
 const FAMILY_DATA = {
   matriarch: {
     name: 'Josephine Worla Ameovi',
-    title: 'Grandma',
+    title: 'Our Beloved Matriarch',
+    subtitle: 'The Root of Our Family Tree',
     years: '1948 - 2025',
-    icon: '👑'
+    quote: 'Her love flows through every branch of our family',
+    color: 'gold'
   },
   children: [
-    { id: 1, name: 'John Marion K. Hodges', relation: 'Son', icon: '👨' },
-    { id: 2, name: 'Osborn M.D.K. Hodges', relation: 'Son', icon: '👨' }
+    { id: 1, name: 'John Marion K. Hodges', relation: 'First Son', title: 'Eldest Child', color: 'burgundy' },
+    { id: 2, name: 'Osborn M.D.K. Hodges', relation: 'Second Son', title: 'Beloved Child', color: 'burgundy' }
   ],
   grandchildren: [
-    { id: 1, name: 'Ria Hodges', parentId: 1, icon: '👩' },
-    { id: 2, name: 'Gayle Hodges', parentId: 1, icon: '👩' }
+    { id: 1, name: 'Ria Hodges', parentId: 1, relation: 'Granddaughter', color: 'rose' },
+    { id: 2, name: 'Gayle Hodges', parentId: 1, relation: 'Granddaughter', color: 'rose' }
   ]
 };
 
@@ -1551,171 +1553,444 @@ const LifeSection = () => {
 };
 
 // ============================================
-// FAMILY TREE SECTION
+// FAMILY TREE SECTION - SPECTACULAR EDITION
 // ============================================
+
+// Floating Golden Leaf Particle
+const GoldenLeaf = ({ delay, duration, startX }) => (
+  <div
+    className="absolute w-3 h-3 pointer-events-none"
+    style={{
+      left: `${startX}%`,
+      bottom: '-20px',
+      animation: `leaf-float ${duration}s ease-in-out infinite`,
+      animationDelay: `${delay}s`,
+    }}
+  >
+    <svg viewBox="0 0 24 24" className="w-full h-full text-gold/60 animate-spin-slow" style={{ animationDuration: `${duration * 2}s` }}>
+      <path fill="currentColor" d="M17,8C8,10 5.9,16.17 3.82,21.34L5.71,22L6.66,19.7C7.14,19.87 7.64,20 8,20C19,20 22,3 22,3C21,5 14,5.25 9,6.25C4,7.25 2,11.5 2,13.5C2,15.5 3.75,17.25 3.75,17.25C7,8 17,8 17,8Z"/>
+    </svg>
+  </div>
+);
+
+// Ethereal Orb Component for Family Members
+const FamilyOrb = ({ member, size = 'lg', onClick, isMatriarch = false, delay = 0 }) => {
+  const [isHovered, setIsHovered] = useState(false);
+
+  const sizeClasses = {
+    xl: 'w-36 h-36 md:w-44 md:h-44',
+    lg: 'w-24 h-24 md:w-28 md:h-28',
+    md: 'w-20 h-20 md:w-24 md:h-24',
+    sm: 'w-16 h-16 md:w-20 md:h-20'
+  };
+
+  const colorSchemes = {
+    gold: {
+      gradient: 'from-amber-300 via-yellow-400 to-amber-500',
+      glow: 'shadow-[0_0_60px_rgba(212,175,55,0.5)]',
+      hoverGlow: 'shadow-[0_0_80px_rgba(212,175,55,0.8)]',
+      ring: 'ring-amber-300/50',
+      bg: 'bg-gradient-to-br from-amber-50 to-yellow-100'
+    },
+    burgundy: {
+      gradient: 'from-rose-400 via-red-500 to-rose-600',
+      glow: 'shadow-[0_0_40px_rgba(139,21,56,0.4)]',
+      hoverGlow: 'shadow-[0_0_60px_rgba(139,21,56,0.6)]',
+      ring: 'ring-rose-300/50',
+      bg: 'bg-gradient-to-br from-rose-50 to-pink-100'
+    },
+    rose: {
+      gradient: 'from-pink-300 via-rose-400 to-pink-500',
+      glow: 'shadow-[0_0_30px_rgba(236,72,153,0.3)]',
+      hoverGlow: 'shadow-[0_0_50px_rgba(236,72,153,0.5)]',
+      ring: 'ring-pink-300/50',
+      bg: 'bg-gradient-to-br from-pink-50 to-rose-100'
+    }
+  };
+
+  const colors = colorSchemes[member.color] || colorSchemes.gold;
+
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className="group relative flex flex-col items-center focus:outline-none"
+      style={{ animationDelay: `${delay}ms` }}
+    >
+      {/* Outer pulsing rings - only for matriarch */}
+      {isMatriarch && (
+        <>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className={`${sizeClasses[size]} rounded-full border-2 border-gold/20 animate-ping`} style={{ animationDuration: '3s' }} />
+          </div>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className={`${sizeClasses[size]} scale-125 rounded-full border border-gold/10 animate-ping`} style={{ animationDuration: '4s', animationDelay: '1s' }} />
+          </div>
+        </>
+      )}
+
+      {/* Ethereal glow background */}
+      <div className={`absolute rounded-full blur-2xl transition-all duration-700 ${sizeClasses[size]} ${isHovered ? 'scale-150 opacity-80' : 'scale-100 opacity-40'}`}
+        style={{ background: `radial-gradient(circle, ${member.color === 'gold' ? 'rgba(212,175,55,0.6)' : member.color === 'burgundy' ? 'rgba(139,21,56,0.5)' : 'rgba(236,72,153,0.4)'} 0%, transparent 70%)` }}
+      />
+
+      {/* Main orb */}
+      <div className={`relative ${sizeClasses[size]} rounded-full transition-all duration-500 ${isHovered ? `scale-110 ${colors.hoverGlow}` : colors.glow}`}>
+        {/* Gradient border ring */}
+        <div className={`absolute inset-0 rounded-full bg-gradient-to-br ${colors.gradient} p-[3px] ${isMatriarch ? 'animate-spin-slow' : ''}`} style={{ animationDuration: '20s' }}>
+          <div className={`w-full h-full rounded-full ${colors.bg} flex items-center justify-center overflow-hidden`}>
+            {/* Inner shimmer effect */}
+            <div className="absolute inset-0 bg-gradient-to-tr from-white/40 via-transparent to-white/20 animate-shimmer" />
+
+            {/* Crown/Icon for matriarch, initials for others */}
+            {isMatriarch ? (
+              <div className="relative">
+                <span className="text-4xl md:text-5xl filter drop-shadow-lg">👑</span>
+                <div className="absolute inset-0 animate-pulse" style={{ animationDuration: '2s' }}>
+                  <span className="text-4xl md:text-5xl opacity-50 blur-sm">👑</span>
+                </div>
+              </div>
+            ) : (
+              <span className={`font-display font-bold ${size === 'lg' || size === 'md' ? 'text-2xl md:text-3xl' : 'text-xl md:text-2xl'} ${member.color === 'burgundy' ? 'text-burgundy' : 'text-pink-500'}`}>
+                {member.name.split(' ').map(n => n[0]).slice(0, 2).join('')}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Floating particles around orb on hover */}
+        {isHovered && (
+          <div className="absolute inset-0">
+            {[...Array(6)].map((_, i) => (
+              <div
+                key={i}
+                className="absolute w-1.5 h-1.5 rounded-full bg-gold animate-orbit"
+                style={{
+                  top: '50%',
+                  left: '50%',
+                  animationDelay: `${i * 0.15}s`,
+                  animationDuration: '2s',
+                  transform: `rotate(${i * 60}deg) translateX(${size === 'xl' ? '80px' : size === 'lg' ? '60px' : '50px'})`
+                }}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Name and title */}
+      <div className="mt-4 text-center transition-all duration-300 transform group-hover:-translate-y-1">
+        <p className={`font-display ${isMatriarch ? 'text-xl md:text-2xl' : 'text-sm md:text-base'} text-charcoal group-hover:text-gold transition-colors duration-300 max-w-[150px]`}>
+          {member.name}
+        </p>
+        {member.relation && (
+          <p className={`text-xs md:text-sm ${member.color === 'gold' ? 'text-gold' : member.color === 'burgundy' ? 'text-burgundy' : 'text-pink-500'} mt-1 opacity-80`}>
+            {member.relation}
+          </p>
+        )}
+      </div>
+    </button>
+  );
+};
+
+// Animated Branch Connection
+const TreeBranch = ({ isVisible, delay = 0, direction = 'down', length = 'md' }) => {
+  const lengths = { sm: 'h-8', md: 'h-16', lg: 'h-24' };
+
+  if (direction === 'horizontal') {
+    return (
+      <div className="relative h-1 w-full overflow-hidden">
+        <div
+          className="absolute inset-0 bg-gradient-to-r from-transparent via-gold/60 to-transparent transition-all duration-1000 ease-out"
+          style={{
+            transform: isVisible ? 'scaleX(1)' : 'scaleX(0)',
+            transitionDelay: `${delay}ms`
+          }}
+        />
+        {/* Animated pulse traveling along the branch */}
+        {isVisible && (
+          <div
+            className="absolute top-0 h-full w-8 bg-gradient-to-r from-transparent via-white/80 to-transparent animate-branch-pulse"
+            style={{ animationDelay: `${delay + 500}ms` }}
+          />
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className={`relative w-1 ${lengths[length]} overflow-hidden`}>
+      {/* Main branch line */}
+      <div
+        className="absolute inset-0 bg-gradient-to-b from-gold via-gold/70 to-gold/40 transition-all duration-1000 ease-out origin-top"
+        style={{
+          transform: isVisible ? 'scaleY(1)' : 'scaleY(0)',
+          transitionDelay: `${delay}ms`
+        }}
+      />
+      {/* Glowing core */}
+      <div
+        className="absolute inset-x-0 top-0 w-full bg-gradient-to-b from-white/80 via-gold/50 to-transparent transition-all duration-1000 ease-out origin-top"
+        style={{
+          transform: isVisible ? 'scaleY(1)' : 'scaleY(0)',
+          transitionDelay: `${delay + 200}ms`,
+          filter: 'blur(2px)'
+        }}
+      />
+    </div>
+  );
+};
 
 const FamilyTreeSection = () => {
   const { t } = useLanguage();
   const [selectedMember, setSelectedMember] = useState(null);
-  const [branchRef, branchVisible] = useScrollReveal();
+  const [sectionRef, isVisible] = useScrollReveal();
+  const [showTree, setShowTree] = useState(false);
 
-  // Get grandchildren for a specific parent
+  useEffect(() => {
+    if (isVisible) {
+      setTimeout(() => setShowTree(true), 300);
+    }
+  }, [isVisible]);
+
   const getGrandchildrenForParent = (parentId) => {
     return FAMILY_DATA.grandchildren.filter(gc => gc.parentId === parentId);
   };
 
   return (
-    <section id="family" className="py-24 md:py-32 bg-white relative overflow-hidden">
-      {/* Decorative tree elements */}
-      <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
-        <div className="absolute -top-20 -left-20 w-80 h-80 border border-forest/5 rounded-full animate-pulse-soft" />
-        <div className="absolute -bottom-20 -right-20 w-96 h-96 border border-gold/5 rounded-full animate-pulse-soft" style={{ animationDelay: '-4s' }} />
+    <section id="family" className="py-24 md:py-32 bg-gradient-to-b from-cream via-white to-cream relative overflow-hidden" ref={sectionRef}>
+      {/* Magical Background Elements */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {/* Large ethereal circles */}
+        <div className="absolute top-1/4 -left-32 w-96 h-96 rounded-full bg-gradient-radial from-gold/10 via-gold/5 to-transparent animate-pulse-soft" />
+        <div className="absolute bottom-1/4 -right-32 w-[500px] h-[500px] rounded-full bg-gradient-radial from-burgundy/10 via-burgundy/5 to-transparent animate-pulse-soft" style={{ animationDelay: '-3s' }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full bg-gradient-radial from-gold/5 via-transparent to-transparent" />
+
+        {/* Floating golden leaves */}
+        {[...Array(12)].map((_, i) => (
+          <GoldenLeaf key={i} delay={i * 2} duration={15 + Math.random() * 10} startX={5 + i * 8} />
+        ))}
+
+        {/* Light rays from top */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] bg-gradient-to-b from-gold/5 via-transparent to-transparent" style={{ clipPath: 'polygon(40% 0%, 60% 0%, 80% 100%, 20% 100%)' }} />
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-        <SectionHeading eyebrow={t('family.eyebrow')} title={t('family.title')} subtitle={t('family.subtitle')} />
-
-        <div className="flex flex-col items-center" ref={branchRef}>
-          {/* Matriarch */}
-          <AnimatedSection animation="zoom">
-            <div className="text-center mb-8">
-              <button onClick={() => setSelectedMember(FAMILY_DATA.matriarch)} className="group relative">
-                {/* Glow effect */}
-                <div className="absolute inset-0 w-32 h-32 mx-auto rounded-full bg-gold/20 animate-glow-pulse blur-xl" />
-                <div className="relative w-32 h-32 mx-auto rounded-full bg-gradient-to-br from-gold to-gold-dark p-1 shadow-gold-glow group-hover:scale-110 transition-all duration-500">
-                  <div className="w-full h-full rounded-full bg-cream flex items-center justify-center group-hover:bg-gold/10 transition-colors duration-300">
-                    <span className="text-4xl transition-transform duration-500 group-hover:scale-110">{FAMILY_DATA.matriarch.icon}</span>
-                  </div>
-                </div>
-                <p className="mt-3 font-display text-xl text-charcoal group-hover:text-gold-dark transition-colors duration-300">{FAMILY_DATA.matriarch.name}</p>
-                <p className="text-gold text-sm animate-gradient-text">{t('family.matriarch')}</p>
-              </button>
-            </div>
-          </AnimatedSection>
-
-          {/* Animated Connector Line from Matriarch */}
-          <div className="w-px h-12 overflow-hidden">
-            <div
-              className="w-full bg-gradient-to-b from-gold to-burgundy/50 transition-all duration-700 ease-out"
-              style={{ height: branchVisible ? '100%' : '0%', transitionDelay: '300ms' }}
-            />
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        {/* Section Header */}
+        <AnimatedSection animation="fade-up">
+          <div className="text-center mb-16">
+            <span className="inline-block px-4 py-1.5 bg-gold/10 text-gold rounded-full text-sm font-medium mb-4 animate-shimmer">
+              {t('family.eyebrow')}
+            </span>
+            <h2 className="font-display text-4xl md:text-5xl lg:text-6xl text-charcoal mb-4">
+              {t('family.title')}
+            </h2>
+            <p className="text-warm-gray text-lg max-w-2xl mx-auto">{t('family.subtitle')}</p>
           </div>
+        </AnimatedSection>
 
-          {/* Children Label */}
-          <AnimatedSection delay={350}>
-            <div className="text-center mb-6">
-              <span className="inline-block px-4 py-1 bg-burgundy/10 text-burgundy rounded-full text-sm font-medium magnetic-hover">{t('family.children')}</span>
+        {/* The Magnificent Tree */}
+        <div className="relative flex flex-col items-center">
+
+          {/* MATRIARCH - The Crown of the Tree */}
+          <AnimatedSection animation="zoom" delay={200}>
+            <div className="relative mb-4">
+              {/* Decorative crown rays */}
+              <div className="absolute -inset-8 flex items-center justify-center opacity-60">
+                {[...Array(8)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="absolute w-1 h-24 bg-gradient-to-t from-transparent via-gold/30 to-gold/60 origin-bottom"
+                    style={{
+                      transform: `rotate(${i * 45}deg)`,
+                      animation: showTree ? `ray-pulse 3s ease-in-out infinite` : 'none',
+                      animationDelay: `${i * 0.2}s`
+                    }}
+                  />
+                ))}
+              </div>
+
+              <FamilyOrb
+                member={FAMILY_DATA.matriarch}
+                size="xl"
+                onClick={() => setSelectedMember(FAMILY_DATA.matriarch)}
+                isMatriarch={true}
+              />
+            </div>
+
+            {/* Matriarch quote */}
+            <p className="text-center text-warm-gray/80 italic text-sm max-w-xs mx-auto mt-2 animate-fade-in" style={{ animationDelay: '1s' }}>
+              "{FAMILY_DATA.matriarch.quote}"
+            </p>
+          </AnimatedSection>
+
+          {/* Main trunk from matriarch */}
+          <TreeBranch isVisible={showTree} delay={600} direction="down" length="lg" />
+
+          {/* Children Generation Label */}
+          <AnimatedSection delay={800}>
+            <div className="my-6 relative">
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-48 h-px bg-gradient-to-r from-transparent via-burgundy/30 to-transparent" />
+              </div>
+              <span className="relative inline-block px-6 py-2 bg-burgundy/10 text-burgundy rounded-full text-sm font-semibold backdrop-blur-sm border border-burgundy/20">
+                {t('family.children')}
+              </span>
             </div>
           </AnimatedSection>
 
-          {/* Children Row with Grandchildren Branches */}
-          <AnimatedSection delay={400}>
-            <div className="flex flex-wrap justify-center gap-16 md:gap-24">
+          {/* CHILDREN ROW */}
+          <div className="relative w-full max-w-3xl">
+            {/* Horizontal branch connecting children */}
+            <div className="absolute top-0 left-1/4 right-1/4 h-1">
+              <TreeBranch isVisible={showTree} delay={900} direction="horizontal" />
+            </div>
+
+            <div className="flex justify-center gap-24 md:gap-32 pt-6">
               {FAMILY_DATA.children.map((child, index) => {
                 const childGrandchildren = getGrandchildrenForParent(child.id);
-                const hasGrandchildren = childGrandchildren.length > 0;
 
                 return (
                   <div key={child.id} className="flex flex-col items-center">
-                    {/* Child */}
-                    <button
-                      onClick={() => setSelectedMember(child)}
-                      className="group text-center"
-                      style={{ animationDelay: `${index * 100}ms` }}
-                    >
-                      <div className="relative">
-                        <div className="absolute inset-0 w-20 h-20 mx-auto rounded-full bg-burgundy/20 scale-0 group-hover:scale-150 transition-transform duration-500 opacity-50" />
-                        <div className="relative w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-burgundy to-burgundy-dark p-0.5 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
-                          <div className="w-full h-full rounded-full bg-cream flex items-center justify-center group-hover:bg-burgundy/10 transition-colors duration-300">
-                            <span className="text-2xl transition-transform duration-300 group-hover:scale-125">{child.icon}</span>
+                    {/* Vertical branch to child */}
+                    <TreeBranch isVisible={showTree} delay={1000 + index * 150} direction="down" length="sm" />
+
+                    <AnimatedSection delay={1100 + index * 150}>
+                      <FamilyOrb
+                        member={child}
+                        size="lg"
+                        onClick={() => setSelectedMember(child)}
+                        delay={index * 100}
+                      />
+                    </AnimatedSection>
+
+                    {/* Grandchildren under this child */}
+                    {childGrandchildren.length > 0 && (
+                      <div className="flex flex-col items-center mt-4">
+                        <TreeBranch isVisible={showTree} delay={1400 + index * 150} direction="down" length="md" />
+
+                        {/* Grandchildren row */}
+                        <div className="relative">
+                          {childGrandchildren.length > 1 && (
+                            <div className="absolute top-0 left-0 right-0 h-1">
+                              <TreeBranch isVisible={showTree} delay={1500 + index * 150} direction="horizontal" />
+                            </div>
+                          )}
+
+                          <div className="flex gap-8 pt-4">
+                            {childGrandchildren.map((grandchild, gcIndex) => (
+                              <div key={grandchild.id} className="flex flex-col items-center">
+                                <TreeBranch isVisible={showTree} delay={1600 + gcIndex * 100} direction="down" length="sm" />
+                                <AnimatedSection delay={1700 + gcIndex * 100}>
+                                  <FamilyOrb
+                                    member={grandchild}
+                                    size="md"
+                                    onClick={() => setSelectedMember(grandchild)}
+                                    delay={gcIndex * 50}
+                                  />
+                                </AnimatedSection>
+                              </div>
+                            ))}
                           </div>
                         </div>
                       </div>
-                      <p className="mt-2 text-sm font-medium text-charcoal group-hover:text-burgundy transition-colors duration-300 max-w-[120px]">{child.name}</p>
-                    </button>
-
-                    {/* Connector and Grandchildren under this child */}
-                    {hasGrandchildren && (
-                      <>
-                        {/* Vertical connector from child */}
-                        <div className="w-px h-8 overflow-hidden mt-4">
-                          <div
-                            className="w-full bg-gradient-to-b from-burgundy/30 to-forest/50 transition-all duration-700 ease-out"
-                            style={{ height: branchVisible ? '100%' : '0%', transitionDelay: `${600 + index * 100}ms` }}
-                          />
-                        </div>
-
-                        {/* Horizontal connector bar */}
-                        {childGrandchildren.length > 1 && (
-                          <div className="h-px overflow-hidden" style={{ width: `${(childGrandchildren.length - 1) * 80 + 40}px` }}>
-                            <div
-                              className="h-full bg-forest/40 transition-all duration-700 ease-out"
-                              style={{ width: branchVisible ? '100%' : '0%', transitionDelay: `${700 + index * 100}ms` }}
-                            />
-                          </div>
-                        )}
-
-                        {/* Grandchildren */}
-                        <div className="flex gap-6 mt-2">
-                          {childGrandchildren.map((grandchild, gcIndex) => (
-                            <div key={grandchild.id} className="flex flex-col items-center">
-                              {/* Small vertical connector to each grandchild */}
-                              <div className="w-px h-4 overflow-hidden">
-                                <div
-                                  className="w-full bg-forest/40 transition-all duration-500 ease-out"
-                                  style={{ height: branchVisible ? '100%' : '0%', transitionDelay: `${800 + gcIndex * 50}ms` }}
-                                />
-                              </div>
-                              <button
-                                onClick={() => setSelectedMember(grandchild)}
-                                className="group text-center"
-                                style={{ animationDelay: `${gcIndex * 50}ms` }}
-                              >
-                                <div className="relative">
-                                  <div className="absolute inset-0 w-14 h-14 mx-auto rounded-full bg-pink-200/30 scale-0 group-hover:scale-150 transition-transform duration-500 opacity-50" />
-                                  <div className="w-14 h-14 mx-auto rounded-full bg-gradient-to-br from-pink-400 to-pink-500 p-0.5 group-hover:scale-125 group-hover:-rotate-6 transition-all duration-500 shadow-md">
-                                    <div className="w-full h-full rounded-full bg-cream flex items-center justify-center group-hover:bg-pink-50 transition-colors duration-300">
-                                      <span className="text-xl transition-transform duration-300 group-hover:scale-110">{grandchild.icon}</span>
-                                    </div>
-                                  </div>
-                                </div>
-                                <p className="mt-2 text-xs font-medium text-charcoal group-hover:text-pink-500 transition-colors duration-300">{grandchild.name}</p>
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      </>
                     )}
                   </div>
                 );
               })}
             </div>
-          </AnimatedSection>
+          </div>
 
-          {/* Grandchildren Label */}
-          <AnimatedSection delay={900}>
-            <div className="text-center mt-8">
-              <span className="inline-block px-4 py-1 bg-pink-100 text-pink-600 rounded-full text-sm font-medium magnetic-hover">{t('family.grandchildren')}</span>
+          {/* Grandchildren Generation Label */}
+          <AnimatedSection delay={1800}>
+            <div className="mt-10 relative">
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-48 h-px bg-gradient-to-r from-transparent via-pink-400/30 to-transparent" />
+              </div>
+              <span className="relative inline-block px-6 py-2 bg-pink-100 text-pink-600 rounded-full text-sm font-semibold backdrop-blur-sm border border-pink-200">
+                {t('family.grandchildren')}
+              </span>
             </div>
           </AnimatedSection>
         </div>
 
-        {/* Member Modal */}
+        {/* Member Detail Modal */}
         {selectedMember && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-charcoal/80 backdrop-blur-sm animate-fade-in" onClick={() => setSelectedMember(null)}>
-            <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl animate-scale-in text-center" onClick={e => e.stopPropagation()}>
-              <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-gold to-gold-dark p-1 mb-4 animate-glow-pulse">
-                <div className="w-full h-full rounded-full bg-cream flex items-center justify-center">
-                  <span className="text-4xl">{selectedMember.icon || '👤'}</span>
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-charcoal/90 backdrop-blur-md animate-fade-in"
+            onClick={() => setSelectedMember(null)}
+          >
+            {/* Floating particles in modal */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              {[...Array(20)].map((_, i) => (
+                <div
+                  key={i}
+                  className="absolute w-1 h-1 rounded-full bg-gold/60 animate-float-up-fade"
+                  style={{
+                    left: `${Math.random() * 100}%`,
+                    bottom: '-10px',
+                    animationDelay: `${Math.random() * 5}s`,
+                    animationDuration: `${5 + Math.random() * 5}s`
+                  }}
+                />
+              ))}
+            </div>
+
+            <div
+              className="relative bg-gradient-to-br from-white via-cream to-white rounded-3xl p-8 md:p-10 max-w-md w-full shadow-2xl animate-scale-in border border-gold/20"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Decorative corner ornaments */}
+              <div className="absolute top-4 left-4 w-8 h-8 border-t-2 border-l-2 border-gold/30 rounded-tl-lg" />
+              <div className="absolute top-4 right-4 w-8 h-8 border-t-2 border-r-2 border-gold/30 rounded-tr-lg" />
+              <div className="absolute bottom-4 left-4 w-8 h-8 border-b-2 border-l-2 border-gold/30 rounded-bl-lg" />
+              <div className="absolute bottom-4 right-4 w-8 h-8 border-b-2 border-r-2 border-gold/30 rounded-br-lg" />
+
+              <div className="text-center">
+                {/* Large orb display */}
+                <div className="relative inline-block mb-6">
+                  <div className="absolute inset-0 w-32 h-32 rounded-full bg-gold/20 blur-2xl animate-pulse" />
+                  <div className={`relative w-32 h-32 rounded-full bg-gradient-to-br ${selectedMember.color === 'gold' ? 'from-amber-300 via-yellow-400 to-amber-500' : selectedMember.color === 'burgundy' ? 'from-rose-400 via-red-500 to-rose-600' : 'from-pink-300 via-rose-400 to-pink-500'} p-1 shadow-[0_0_40px_rgba(212,175,55,0.4)]`}>
+                    <div className="w-full h-full rounded-full bg-gradient-to-br from-cream to-white flex items-center justify-center">
+                      {selectedMember.color === 'gold' ? (
+                        <span className="text-5xl">👑</span>
+                      ) : (
+                        <span className={`font-display text-4xl font-bold ${selectedMember.color === 'burgundy' ? 'text-burgundy' : 'text-pink-500'}`}>
+                          {selectedMember.name.split(' ').map(n => n[0]).slice(0, 2).join('')}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
+
+                <h3 className="font-display text-2xl md:text-3xl text-charcoal mb-2">{selectedMember.name}</h3>
+
+                {selectedMember.title && (
+                  <p className="text-gold font-medium mb-1">{selectedMember.title}</p>
+                )}
+
+                {selectedMember.relation && (
+                  <p className="text-warm-gray">{selectedMember.relation}</p>
+                )}
+
+                {selectedMember.years && (
+                  <p className="text-warm-gray/80 text-sm mt-2 font-medium">{selectedMember.years}</p>
+                )}
+
+                {selectedMember.quote && (
+                  <p className="text-warm-gray/70 italic text-sm mt-4 px-4 py-3 bg-gold/5 rounded-xl">
+                    "{selectedMember.quote}"
+                  </p>
+                )}
+
+                <button
+                  onClick={() => setSelectedMember(null)}
+                  className="mt-8 px-8 py-3 bg-gradient-to-r from-gold to-gold-dark text-white rounded-full font-semibold hover:shadow-gold-glow hover:scale-105 active:scale-95 transition-all duration-300"
+                >
+                  {t('common.close')}
+                </button>
               </div>
-              <h3 className="font-display text-2xl text-charcoal mb-2">{selectedMember.name}</h3>
-              {selectedMember.title && <p className="text-gold">{selectedMember.title}</p>}
-              {selectedMember.relation && <p className="text-warm-gray">{selectedMember.relation}</p>}
-              {selectedMember.years && <p className="text-warm-gray text-sm mt-2">{selectedMember.years}</p>}
-              <button onClick={() => setSelectedMember(null)} className="mt-6 px-6 py-2 bg-gold text-white rounded-full hover:bg-gold-dark hover:scale-105 active:scale-95 transition-all duration-300">
-                {t('common.close')}
-              </button>
             </div>
           </div>
         )}
