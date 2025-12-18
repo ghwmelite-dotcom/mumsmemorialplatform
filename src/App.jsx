@@ -10,9 +10,6 @@ const FORMSPREE_GUESTBOOK = 'https://formspree.io/f/movgoyle';
 const FORMSPREE_RSVP = 'https://formspree.io/f/xgvgjrzk';
 const FORMSPREE_CONTACT = 'https://formspree.io/f/xkgdlkzz';
 
-// Cloudinary configuration (create free account at cloudinary.com)
-const CLOUDINARY_CLOUD_NAME = 'db967oq9r';
-const CLOUDINARY_UPLOAD_PRESET = 'memorial_tributes';
 
 // Live stream configuration
 const STREAM_CONFIG = {
@@ -3145,10 +3142,6 @@ const TributesSection = ({ showToast }) => {
   const [showAIWriter, setShowAIWriter] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [displayCount, setDisplayCount] = useState(6);
-  const [mediaTributes, setMediaTributes] = useState(() => {
-    const saved = localStorage.getItem('memorial-media-tributes');
-    return saved ? JSON.parse(saved) : [];
-  });
 
   // Fetch entries from API on mount
   useEffect(() => {
@@ -3218,38 +3211,6 @@ const TributesSection = ({ showToast }) => {
   const displayedEntries = entries.slice(0, displayCount);
   const hasMore = entries.length > displayCount;
 
-  const openCloudinaryWidget = () => {
-    if (typeof window.cloudinary === 'undefined') {
-      showToast('Video upload not configured yet', 'error');
-      return;
-    }
-
-    window.cloudinary.openUploadWidget({
-      cloudName: CLOUDINARY_CLOUD_NAME,
-      uploadPreset: CLOUDINARY_UPLOAD_PRESET,
-      sources: ['local', 'camera'],
-      resourceType: 'video',
-      maxFileSize: 50000000,
-      maxDuration: 120,
-      clientAllowedFormats: ['mp4', 'webm', 'mov', 'mp3', 'wav'],
-      styles: { palette: { window: '#FBF8F3', windowBorder: '#D4AF37', tabIcon: '#D4AF37', menuIcons: '#2C2825', textDark: '#2C2825', textLight: '#FFFFFF', link: '#D4AF37', action: '#D4AF37', inactiveTabIcon: '#7D7670', error: '#8B1538', inProgress: '#D4AF37', complete: '#1A5D1A', sourceBg: '#FEFCF9' } }
-    }, (error, result) => {
-      if (!error && result && result.event === 'success') {
-        const newTribute = {
-          id: Date.now(),
-          url: result.info.secure_url,
-          type: result.info.resource_type,
-          name: 'Anonymous',
-          createdAt: new Date().toISOString()
-        };
-        const updated = [newTribute, ...mediaTributes];
-        setMediaTributes(updated);
-        localStorage.setItem('memorial-media-tributes', JSON.stringify(updated));
-        showToast('Your tribute has been uploaded!', 'success');
-      }
-    });
-  };
-
   return (
     <section id="tributes" className="py-24 md:py-32 bg-cream relative">
       <CornerOrnament position="bottom-left" />
@@ -3258,60 +3219,8 @@ const TributesSection = ({ showToast }) => {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <SectionHeading eyebrow={t('tributes.eyebrow')} title={t('tributes.title')} subtitle={t('tributes.subtitle')} />
 
-        {/* Video/Audio Tributes */}
-        <AnimatedSection>
-          <Card className="p-6 md:p-8 mb-12">
-            <h3 className="font-display text-xl text-charcoal mb-4 flex items-center gap-2">
-              <span className="text-2xl">🎥</span> {t('tributes.videoTributes')}
-            </h3>
-            <p className="text-warm-gray mb-6">{t('tributes.recordVideo')}</p>
-            <Button onClick={openCloudinaryWidget} variant="secondary">{t('tributes.uploadTribute')}</Button>
-
-            {mediaTributes.length > 0 && (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-6">
-                {mediaTributes.map((tribute) => (
-                  <div key={tribute.id} className="aspect-video bg-charcoal rounded-xl overflow-hidden relative group">
-                    {tribute.type === 'video' ? (
-                      <video src={tribute.url} controls className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center p-4">
-                        {/* Animated Waveform Visualization */}
-                        <div className="flex items-center justify-center gap-1 mb-4 h-16">
-                          {Array.from({ length: 12 }).map((_, i) => (
-                            <div
-                              key={i}
-                              className="w-1 bg-gradient-to-t from-gold to-gold-light rounded-full animate-waveform"
-                              style={{
-                                height: `${20 + Math.random() * 30}px`,
-                                animationDelay: `${i * 0.1}s`,
-                                animationDuration: `${0.4 + Math.random() * 0.3}s`,
-                              }}
-                            />
-                          ))}
-                        </div>
-                        <audio src={tribute.url} controls className="w-full" />
-                        <p className="text-white/60 text-xs mt-2">Audio Tribute</p>
-                      </div>
-                    )}
-                    {/* Play overlay for video */}
-                    {tribute.type === 'video' && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-charcoal/30 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                        <div className="w-12 h-12 rounded-full bg-gold/90 flex items-center justify-center">
-                          <svg className="w-5 h-5 ml-1 text-white" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M8 5v14l11-7z" />
-                          </svg>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
-        </AnimatedSection>
-
         {/* Written Tributes Form */}
-        <AnimatedSection delay={100}>
+        <AnimatedSection>
           <Card className="p-6 md:p-8 mb-12">
             <h3 className="font-display text-xl text-charcoal mb-6 flex items-center gap-2">
               <span className="text-2xl">✍️</span> {t('tributes.signGuestbook')}
