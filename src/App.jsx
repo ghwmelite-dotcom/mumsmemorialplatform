@@ -1321,6 +1321,7 @@ const Navigation = ({ activeSection, setActiveSection }) => {
     { id: 'family', label: t('nav.family') },
     { id: 'timeline', label: t('nav.memories') },
     { id: 'candles', label: t('nav.candles') },
+    { id: 'lanterns', label: t('nav.lanterns') },
     { id: 'stream', label: t('nav.stream') },
     { id: 'tributes', label: t('nav.tributes') },
     { id: 'donate', label: t('nav.donate') },
@@ -2322,6 +2323,385 @@ const CandleLightingSection = ({ showToast }) => {
             <div className="h-px w-16 bg-gradient-to-r from-transparent to-gold/50" />
             <span className="text-gold/50 text-2xl">🕊️</span>
             <div className="h-px w-16 bg-gradient-to-l from-transparent to-gold/50" />
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
+// ============================================
+// FLOATING LANTERNS SECTION
+// ============================================
+
+// Cloudflare Worker API - GLOBAL lantern storage (visible to ALL visitors)
+const LANTERNS_API_URL = 'https://memorial-lanterns-api.ghwmelite.workers.dev';
+
+// Formspree endpoint for lanterns (backup/notification)
+const FORMSPREE_LANTERNS = 'https://formspree.io/f/xwpkgjkq';
+
+// Default lanterns - fallback if API fails
+const DEFAULT_LANTERNS = [
+  { id: 1, name: "The Family", message: "Forever in our hearts, your light guides us still.", releasedAt: "2025-01-01T00:00:00Z" },
+  { id: 2, name: "John Marion K. Hodges", message: "Your love and wisdom will never be forgotten.", releasedAt: "2025-01-02T00:00:00Z" },
+  { id: 3, name: "Osborn M.D.K. Hodges", message: "Rest peacefully, Grandma. We love you always.", releasedAt: "2025-01-02T00:00:00Z" },
+  { id: 4, name: "Ria Hodges", message: "Your spirit shines bright in all of us.", releasedAt: "2025-01-03T00:00:00Z" },
+  { id: 5, name: "Gayle Hodges", message: "Until we meet again, sweet Grandma.", releasedAt: "2025-01-03T00:00:00Z" }
+];
+
+// Individual Floating Lantern Component
+const FloatingLantern = ({ lantern, index, isNew, totalCount }) => {
+  const [isHovered, setIsHovered] = useState(false);
+
+  // Calculate position - spread lanterns across the sky
+  const getPosition = () => {
+    // Use index to create varied positions
+    const baseX = 5 + (index % 8) * 12 + (Math.random() * 5);
+    const baseY = 60 + (index % 3) * 10 + (Math.random() * 10);
+    return { x: Math.min(baseX, 90), y: Math.min(baseY, 85) };
+  };
+
+  const pos = getPosition();
+  const animationDelay = (index * 2) % 25; // Stagger animations
+  const animationDuration = 20 + (index % 5) * 3; // Vary duration
+
+  return (
+    <div
+      className={`absolute cursor-pointer transition-transform duration-300 ${isNew ? 'animate-lantern-release' : ''}`}
+      style={{
+        left: `${pos.x}%`,
+        bottom: `${pos.y}%`,
+        animationDelay: `${animationDelay}s`,
+        zIndex: isHovered ? 50 : 10 + index
+      }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* Lantern Container with float animation */}
+      <div
+        className="animate-lantern-float"
+        style={{
+          animationDelay: `${animationDelay}s`,
+          animationDuration: `${animationDuration}s`
+        }}
+      >
+        {/* Lantern with sway */}
+        <div className="animate-lantern-sway" style={{ animationDelay: `${index * 0.3}s` }}>
+          {/* Glow effect */}
+          <div className="animate-lantern-glow">
+            {/* Paper lantern shape */}
+            <div className={`relative w-12 h-16 sm:w-14 sm:h-20 transition-transform duration-300 ${isHovered ? 'scale-125' : ''}`}>
+              {/* Lantern body - warm orange gradient */}
+              <div className="absolute inset-0 rounded-t-full rounded-b-lg bg-gradient-to-b from-orange-300 via-orange-400 to-orange-500 opacity-90" />
+
+              {/* Inner glow */}
+              <div className="absolute inset-1 rounded-t-full rounded-b-lg bg-gradient-to-b from-yellow-200 via-orange-300 to-orange-400 opacity-80" />
+
+              {/* Light core */}
+              <div className="absolute inset-2 top-4 rounded-full bg-gradient-radial from-yellow-100 via-orange-200 to-transparent opacity-90" />
+
+              {/* Top rim */}
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-2 bg-gradient-to-b from-red-800 to-red-900 rounded-t-lg" />
+
+              {/* Bottom rim */}
+              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-1.5 bg-gradient-to-b from-red-800 to-red-900 rounded-b-lg" />
+
+              {/* Flame inside */}
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 w-2 h-3 bg-gradient-to-t from-yellow-400 via-orange-300 to-transparent rounded-full animate-flame-flicker opacity-90" />
+
+              {/* String/holder */}
+              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-px h-3 bg-gray-600" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Tooltip with message */}
+      <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-4 px-3 py-2 bg-charcoal/95 text-white text-xs rounded-xl shadow-xl transition-all duration-300 whitespace-nowrap max-w-[200px] ${isHovered ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}`}>
+        <div className="font-medium text-gold mb-1">{lantern.name}</div>
+        <div className="text-white/80 text-[10px] line-clamp-2 whitespace-normal">{lantern.message}</div>
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-charcoal/95" />
+      </div>
+    </div>
+  );
+};
+
+const FloatingLanternsSection = ({ showToast }) => {
+  const { t } = useLanguage();
+  const [lanterns, setLanterns] = useState(DEFAULT_LANTERNS);
+  const [name, setName] = useState('');
+  const [message, setMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [newLanternId, setNewLanternId] = useState(null);
+  const [showReleaseEffect, setShowReleaseEffect] = useState(false);
+  const isSavingRef = useRef(false);
+  const sectionRef = useRef(null);
+
+  const { ref: countRef, count: animatedCount } = useCountUp(lanterns.length, 2000);
+
+  // Fetch lanterns from Cloudflare Worker API on mount
+  useEffect(() => {
+    const fetchLanterns = async () => {
+      try {
+        const response = await fetch(LANTERNS_API_URL);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.lanterns && Array.isArray(data.lanterns)) {
+            setLanterns(data.lanterns);
+          }
+        }
+      } catch (error) {
+        console.log('Using default lanterns:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchLanterns();
+
+    // Poll for new lanterns every 30 seconds
+    const pollInterval = setInterval(() => {
+      if (!isSavingRef.current) {
+        fetchLanterns();
+      }
+    }, 30000);
+
+    return () => clearInterval(pollInterval);
+  }, []);
+
+  const releaseLantern = async (e) => {
+    e.preventDefault();
+    if (!name.trim() || !message.trim() || isSubmitting) return;
+
+    setIsSubmitting(true);
+    setShowReleaseEffect(true);
+    isSavingRef.current = true;
+
+    const newLantern = {
+      id: Date.now(),
+      name: name.trim(),
+      message: message.trim(),
+      releasedAt: new Date().toISOString()
+    };
+
+    // Add new lantern to the list
+    const updatedLanterns = [newLantern, ...lanterns];
+    setLanterns(updatedLanterns);
+    setNewLanternId(newLantern.id);
+
+    try {
+      // Save to Cloudflare Worker API (global storage)
+      const response = await fetch(LANTERNS_API_URL, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lanterns: updatedLanterns })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save');
+      }
+
+      console.log('Lantern released globally!');
+
+      // Also send email notification via Formspree
+      fetch(FORMSPREE_LANTERNS, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newLantern.name,
+          message: newLantern.message,
+          releasedAt: newLantern.releasedAt,
+          _subject: `🏮 New lantern released by ${newLantern.name}`
+        })
+      }).catch(() => {});
+
+    } catch (error) {
+      console.error('Failed to save lantern:', error);
+    }
+
+    // Complete the UI animation
+    setTimeout(() => {
+      setName('');
+      setMessage('');
+      setIsSubmitting(false);
+      setShowReleaseEffect(false);
+      isSavingRef.current = false;
+      showToast(t('lanterns.thankYou'), 'success');
+      setTimeout(() => setNewLanternId(null), 3000);
+    }, 2000);
+  };
+
+  return (
+    <section id="lanterns" ref={sectionRef} className="py-24 md:py-32 bg-gradient-to-b from-[#0a0a1a] via-[#1a1a3a] to-[#0f0f2a] text-white relative overflow-hidden min-h-[800px]">
+      {/* Night sky background with stars */}
+      <div className="absolute inset-0">
+        {/* Gradient overlay for depth */}
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a1a] via-transparent to-[#1a1a4a]/30" />
+
+        {/* Stars - multiple layers */}
+        {Array.from({ length: 120 }).map((_, i) => (
+          <div
+            key={i}
+            className="absolute rounded-full animate-star-twinkle-slow"
+            style={{
+              left: `${Math.random() * 100}%`,
+              top: `${Math.random() * 60}%`,
+              width: `${1 + Math.random() * 2}px`,
+              height: `${1 + Math.random() * 2}px`,
+              background: i % 5 === 0 ? '#FFD700' : i % 3 === 0 ? '#87CEEB' : '#ffffff',
+              animationDelay: `${Math.random() * 5}s`,
+              animationDuration: `${3 + Math.random() * 4}s`,
+              opacity: 0.3 + Math.random() * 0.5,
+            }}
+          />
+        ))}
+
+        {/* Moon glow */}
+        <div className="absolute top-10 right-10 md:top-20 md:right-20 w-16 h-16 md:w-24 md:h-24 rounded-full bg-gradient-radial from-yellow-100/30 via-yellow-200/10 to-transparent blur-md" />
+        <div className="absolute top-12 right-12 md:top-24 md:right-24 w-10 h-10 md:w-16 md:h-16 rounded-full bg-gradient-to-br from-gray-200 to-gray-400 opacity-80" />
+      </div>
+
+      {/* Release burst effect */}
+      {showReleaseEffect && (
+        <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-50">
+          <div className="w-32 h-32 rounded-full bg-gradient-radial from-orange-400/60 via-yellow-300/30 to-transparent animate-release-burst" />
+        </div>
+      )}
+
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <SectionHeading
+          eyebrow={t('lanterns.eyebrow')}
+          title={t('lanterns.title')}
+          subtitle={t('lanterns.subtitle')}
+          light
+        />
+
+        {/* Lantern Sky Display Area */}
+        <AnimatedSection delay={200}>
+          <div className="relative h-[400px] md:h-[500px] rounded-3xl overflow-hidden mb-12">
+            {/* Floating Lanterns */}
+            {isLoading ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="animate-spin rounded-full h-8 w-8 border-2 border-orange-400 border-t-transparent"></div>
+                <span className="ml-3 text-white/70">Loading lanterns...</span>
+              </div>
+            ) : (
+              <>
+                {/* Display up to 30 lanterns for performance */}
+                {lanterns.slice(0, 30).map((lantern, index) => (
+                  <FloatingLantern
+                    key={lantern.id}
+                    lantern={lantern}
+                    index={index}
+                    isNew={lantern.id === newLanternId}
+                    totalCount={lanterns.length}
+                  />
+                ))}
+
+                {/* Ground/horizon line */}
+                <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-[#0a0a1a] to-transparent" />
+
+                {/* Silhouette hills */}
+                <div className="absolute bottom-0 left-0 right-0">
+                  <svg viewBox="0 0 1200 120" className="w-full h-20 fill-[#0a0a1a]">
+                    <path d="M0,120 L0,80 Q150,40 300,60 T600,50 T900,70 T1200,60 L1200,120 Z" />
+                  </svg>
+                </div>
+              </>
+            )}
+          </div>
+        </AnimatedSection>
+
+        {/* Lantern Count */}
+        <AnimatedSection delay={300}>
+          <div ref={countRef} className="text-center mb-10">
+            <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-white/5 border border-orange-500/20 backdrop-blur-sm">
+              <span className="text-3xl">🏮</span>
+              <span className="text-2xl md:text-3xl font-display text-orange-300">{animatedCount}</span>
+              <span className="text-white/60">{t('lanterns.lanternsReleased')}</span>
+            </div>
+          </div>
+        </AnimatedSection>
+
+        {/* Release Lantern Form */}
+        <AnimatedSection delay={400}>
+          <div className="max-w-md mx-auto">
+            <form onSubmit={releaseLantern} className="bg-white/5 backdrop-blur-md rounded-2xl p-6 md:p-8 border border-white/10 shadow-2xl">
+              <h3 className="text-xl font-display text-gold mb-6 text-center">{t('lanterns.releaseLantern')}</h3>
+
+              {/* Name Input */}
+              <div className="mb-4">
+                <label className="block text-white/70 text-sm mb-2">{t('lanterns.yourName')}</label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder={t('lanterns.yourName')}
+                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/40 focus:outline-none focus:border-orange-400/50 focus:ring-2 focus:ring-orange-400/20 transition-all"
+                  required
+                  disabled={isSubmitting}
+                />
+              </div>
+
+              {/* Message Input */}
+              <div className="mb-6">
+                <label className="block text-white/70 text-sm mb-2">{t('lanterns.yourMessage')}</label>
+                <textarea
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder={t('lanterns.messagePlaceholder')}
+                  rows={3}
+                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/40 focus:outline-none focus:border-orange-400/50 focus:ring-2 focus:ring-orange-400/20 transition-all resize-none"
+                  required
+                  disabled={isSubmitting}
+                />
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={isSubmitting || !name.trim() || !message.trim()}
+                className="w-full py-4 bg-gradient-to-r from-orange-500 via-orange-400 to-yellow-500 text-white font-semibold rounded-xl hover:from-orange-600 hover:via-orange-500 hover:to-yellow-600 focus:outline-none focus:ring-2 focus:ring-orange-400/50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-orange-500/25"
+              >
+                {isSubmitting ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    {t('lanterns.releasing')}
+                  </span>
+                ) : (
+                  <span className="flex items-center justify-center gap-2">
+                    <span>🏮</span>
+                    {t('lanterns.releaseLantern')}
+                  </span>
+                )}
+              </button>
+            </form>
+          </div>
+        </AnimatedSection>
+
+        {/* More lanterns indicator */}
+        {lanterns.length > 30 && (
+          <AnimatedSection delay={500}>
+            <div className="text-center mt-8">
+              <div className="inline-flex items-center gap-3 px-5 py-2 rounded-full bg-white/5 border border-white/10">
+                <span className="text-lg">✨</span>
+                <p className="text-white/50 text-sm">+{lanterns.length - 30} more lanterns floating in the night sky</p>
+                <span className="text-lg">✨</span>
+              </div>
+            </div>
+          </AnimatedSection>
+        )}
+
+        {/* Bottom decorative element */}
+        <div className="mt-16 flex justify-center">
+          <div className="flex items-center gap-4">
+            <div className="h-px w-16 bg-gradient-to-r from-transparent to-orange-400/50" />
+            <span className="text-orange-400/50 text-2xl">🌙</span>
+            <div className="h-px w-16 bg-gradient-to-l from-transparent to-orange-400/50" />
           </div>
         </div>
       </div>
@@ -3667,6 +4047,7 @@ export default function App() {
         <PhotoTimelineSection />
         <MemorialGarden showToast={showToast} />
         <CandleLightingSection showToast={showToast} />
+        <FloatingLanternsSection showToast={showToast} />
         <MemoryConstellation />
         <LiveStreamSection />
         <TributesSection showToast={showToast} />

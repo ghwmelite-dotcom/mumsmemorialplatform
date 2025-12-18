@@ -10,6 +10,7 @@ export const translations = {
       family: 'Family',
       memories: 'Memories',
       candles: 'Light a Candle',
+      lanterns: 'Lanterns',
       stream: 'Live Service',
       tributes: 'Tributes',
       donate: 'Contribute',
@@ -70,6 +71,21 @@ export const translations = {
       lightCandle: 'Light a Candle',
       candlesLit: 'candles lit in her memory',
       thankYou: 'Thank you for lighting a candle in her memory.'
+    },
+
+    // Floating Lanterns
+    lanterns: {
+      eyebrow: 'Release Your Wishes',
+      title: 'Floating Lanterns',
+      subtitle: 'Release a lantern into the sky with a message for Grandma. Watch your wishes float toward heaven.',
+      yourName: 'Your Name',
+      yourMessage: 'Your Message to Grandma',
+      messagePlaceholder: 'Share your love, a memory, or a wish...',
+      releaseLantern: 'Release Lantern',
+      releasing: 'Releasing...',
+      lanternsReleased: 'lanterns released to the sky',
+      thankYou: 'Your lantern has been released. May your message reach the heavens.',
+      watchItRise: 'Watch your lantern rise'
     },
 
     // Live Stream
@@ -165,6 +181,7 @@ export const translations = {
       family: 'Ƒome',
       memories: 'Nuxlẽ',
       candles: 'Tso Akaɖi',
+      lanterns: 'Lantern',
       stream: 'Ameyiyi',
       tributes: 'Akpɔkplɔ',
       donate: 'Kpekpeɖeŋu',
@@ -225,6 +242,21 @@ export const translations = {
       lightCandle: 'Tso Akaɖi',
       candlesLit: 'akaɖi siwo wotso na eƒe nuxlẽ',
       thankYou: 'Akpe na wò be yetso akaɖi na eƒe nuxlẽ.'
+    },
+
+    // Floating Lanterns
+    lanterns: {
+      eyebrow: 'Ɖe Wò Dɔ̃ɖoɖowo Ɖa',
+      title: 'Lantern Siwo Le Ƒuƒom',
+      subtitle: 'Ɖe lantern ɖe dziƒo kple nya na Mama. Kpɔ wò dɔ̃ɖoɖowo le yiyim ɖe dziƒo.',
+      yourName: 'Wò Ŋkɔ',
+      yourMessage: 'Wò Nya Na Mama',
+      messagePlaceholder: 'Ma wò lɔlɔ̃, nuxlẽ, alo dɔ̃ɖoɖo...',
+      releaseLantern: 'Ɖe Lantern Ɖa',
+      releasing: 'Wòle ɖeɖam...',
+      lanternsReleased: 'lantern siwo woɖe ɖe dziƒo',
+      thankYou: 'Woɖe wò lantern. Ne wò nya do dziƒo.',
+      watchItRise: 'Kpɔ wò lantern le tsɔtsɔm'
     },
 
     // Live Stream
