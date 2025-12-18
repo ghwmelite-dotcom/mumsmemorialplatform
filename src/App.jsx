@@ -26,8 +26,8 @@ const MOBILE_MONEY = {
   airtelTigo: { number: '0XX XXX XXXX', name: 'Account Name Here' }
 };
 
-// Paystack configuration (TEST MODE)
-const PAYSTACK_PUBLIC_KEY = 'pk_test_9cdde18d25bee33638801838a5779d21f1e7e423';
+// Paystack configuration (LIVE MODE)
+const PAYSTACK_PUBLIC_KEY = 'pk_live_073a86e6624fea1b49c77d020e0beb0b5d23d12a';
 
 // AI Tribute Writer API (Cloudflare Worker with Claude)
 const TRIBUTE_AI_URL = 'https://memorial-tribute-ai.ghwmelite.workers.dev';
