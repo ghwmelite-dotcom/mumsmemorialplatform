@@ -630,19 +630,21 @@ const AmbientMusicPlayer = () => {
                 ))}
               </div>
 
-              {/* Now Playing Video */}
+              {/* Now Playing Video - Only render when expanded to prevent duplicate audio */}
               <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-black/50 mt-2">
-                <iframe
-                  key={`${currentTrack.id}-${isMuted ? 'muted' : 'unmuted'}`}
-                  width="100%"
-                  height="100%"
-                  src={youtubeUrl}
-                  title="Memorial Hymns"
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  className="absolute inset-0"
-                />
+                {isExpanded && (
+                  <iframe
+                    key={`${currentTrack.id}-${isMuted ? 'muted' : 'unmuted'}`}
+                    width="100%"
+                    height="100%"
+                    src={youtubeUrl}
+                    title="Memorial Hymns"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="absolute inset-0"
+                  />
+                )}
               </div>
 
               {/* Shuffle Control */}
